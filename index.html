@@ -630,6 +630,7 @@
               <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">專案名稱</th>
               <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">所屬客戶</th>
               <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">工務人員</th>
+              <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">進場 / 退場</th>
               <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">建立日期</th>
               <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">操作</th>
             </tr>
@@ -665,6 +666,16 @@
           <div>
             <label class="text-xs font-bold text-slate-500">工務人員</label>
             <select id="p-staff" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-bold text-slate-500">進場日期</label>
+              <input type="date" id="p-start-date" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-500">退場日期</label>
+              <input type="date" id="p-end-date" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1">
+            </div>
           </div>
           <div class="flex gap-3 mt-6">
             <button onclick="closeModal('project-modal')" class="flex-1 bg-slate-100 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition">取消</button>
@@ -1876,6 +1887,10 @@ function renderProjects() {
       <td class="p-4 font-bold text-slate-700">${p.name}</td>
       <td class="p-4 text-slate-500 text-sm">${p.client}</td>
       <td class="p-4 text-slate-500 text-sm">${p.staff || '未指定'}</td>
+      <td class="p-4 text-slate-500 text-sm">
+        <div class="font-bold text-indigo-600">${p.startDate || '--'}</div>
+        <div class="text-[10px] text-slate-400">${p.endDate || '--'}</div>
+      </td>
       <td class="p-4 text-slate-500 text-sm">${p.createdAt}</td>
       <td class="p-4 text-center">
         <button onclick="editProject('${p.id}')" class="text-indigo-500 hover:text-indigo-700 mr-3 transition"><i class="fas fa-edit"></i></button>
@@ -1888,6 +1903,8 @@ function renderProjects() {
 function openProjectModal() {
   document.getElementById('p-edit-id').value = '';
   document.getElementById('p-name').value = '';
+  document.getElementById('p-start-date').value = '';
+  document.getElementById('p-end-date').value = '';
   document.getElementById('p-client').innerHTML = clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
   syncProjectStaffDropdown();
   document.getElementById('project-modal-title').textContent = '建立新專案';
@@ -1911,6 +1928,8 @@ function saveProject() {
   const name = document.getElementById('p-name').value.trim();
   const client = document.getElementById('p-client').value;
   const staff = document.getElementById('p-staff').value;
+  const startDate = document.getElementById('p-start-date').value;
+  const endDate = document.getElementById('p-end-date').value;
   
   if (!name) return showToast('請輸入專案名稱', 'error');
   
@@ -1919,8 +1938,10 @@ function saveProject() {
     projects[idx].name = name;
     projects[idx].client = client;
     projects[idx].staff = staff;
+    projects[idx].startDate = startDate;
+    projects[idx].endDate = endDate;
   } else {
-    projects.push({ id, name, client, staff, createdAt: new Date().toISOString().slice(0, 10) });
+    projects.push({ id, name, client, staff, startDate, endDate, createdAt: new Date().toISOString().slice(0, 10) });
   }
   
   save();
@@ -1939,6 +1960,8 @@ function editProject(id) {
   document.getElementById('p-client').value = p.client;
   syncProjectStaffDropdown();
   document.getElementById('p-staff').value = p.staff || '';
+  document.getElementById('p-start-date').value = p.startDate || '';
+  document.getElementById('p-end-date').value = p.endDate || '';
   document.getElementById('project-modal-title').textContent = '編輯專案';
   document.getElementById('project-modal').classList.remove('hidden');
 }
@@ -2552,10 +2575,11 @@ function executePrint(mode) {
       });
 
       // 工地雜項顯示
-      const extraNote = grouped[site][0].extraNote ? ` (${grouped[site][0].extraNote})` : '';
-      if (siteExtraStay > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">住宿費用${extraNote}</td><td>1 式</td></tr>`;
-      if (siteExtraOil > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">油資費用${extraNote}</td><td>1 式</td></tr>`;
-      if (siteExtraOther > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">其他費用${extraNote}</td><td>1 式</td></tr>`;
+      const siteExtraNotes = [...new Set(grouped[site].map(r => r.extraNote).filter(n => n))].join(', ');
+      const extraNoteStr = siteExtraNotes ? ` (${siteExtraNotes})` : '';
+      if (siteExtraStay > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">住宿費用${extraNoteStr}</td><td>1 式</td></tr>`;
+      if (siteExtraOil > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">油資費用${extraNoteStr}</td><td>1 式</td></tr>`;
+      if (siteExtraOther > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">其他費用${extraNoteStr}</td><td>1 式</td></tr>`;
 
       let statStrings = [];
       for (let type in siteStats) {
@@ -2599,16 +2623,17 @@ function executePrint(mode) {
       });
 
       // 工地雜項顯示
+      const siteExtraNotes = [...new Set(grouped[site].map(r => r.extraNote).filter(n => n))].join(', ');
       if (siteExtraStay > 0) {
-        html += `<tr class="bg-amber-50/30"><td>-</td><td style="text-align:left">住宿費用</td><td>1 式</td><td>$${siteExtraStay.toLocaleString()}</td><td>$${siteExtraStay.toLocaleString()}</td><td style="text-align:left">${grouped[site][0].extraNote || ''}</td></tr>`;
+        html += `<tr class="bg-amber-50/30"><td>-</td><td style="text-align:left">住宿費用</td><td>1 式</td><td>$${siteExtraStay.toLocaleString()}</td><td>$${siteExtraStay.toLocaleString()}</td><td style="text-align:left">${siteExtraNotes}</td></tr>`;
         siteAmt += siteExtraStay; grandTotalAmt += siteExtraStay;
       }
       if (siteExtraOil > 0) {
-        html += `<tr class="bg-amber-50/30"><td>-</td><td style="text-align:left">油資費用</td><td>1 式</td><td>$${siteExtraOil.toLocaleString()}</td><td>$${siteExtraOil.toLocaleString()}</td><td style="text-align:left">${grouped[site][0].extraNote || ''}</td></tr>`;
+        html += `<tr class="bg-amber-50/30"><td>-</td><td style="text-align:left">油資費用</td><td>1 式</td><td>$${siteExtraOil.toLocaleString()}</td><td>$${siteExtraOil.toLocaleString()}</td><td style="text-align:left">${siteExtraNotes}</td></tr>`;
         siteAmt += siteExtraOil; grandTotalAmt += siteExtraOil;
       }
       if (siteExtraOther > 0) {
-        html += `<tr class="bg-amber-50/30"><td>-</td><td style="text-align:left">其他費用</td><td>1 式</td><td>$${siteExtraOther.toLocaleString()}</td><td>$${siteExtraOther.toLocaleString()}</td><td style="text-align:left">${grouped[site][0].extraNote || ''}</td></tr>`;
+        html += `<tr class="bg-amber-50/30"><td>-</td><td style="text-align:left">其他費用</td><td>1 式</td><td>$${siteExtraOther.toLocaleString()}</td><td>$${siteExtraOther.toLocaleString()}</td><td style="text-align:left">${siteExtraNotes}</td></tr>`;
         siteAmt += siteExtraOther; grandTotalAmt += siteExtraOther;
       }
 
