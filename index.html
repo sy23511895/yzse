@@ -889,10 +889,10 @@
 	        </div>
 	      </div>
 	      <div class="grid grid-cols-2 gap-4">
-	        <div>
-	          <label class="text-xs font-bold text-slate-500">客戶 *</label>
-	          <select id="r-client" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" onchange="syncStaffDropdown()" required></select>
-	        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-500">客戶 *</label>
+          <select id="r-client" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" onchange="syncStaffDropdown(); autoFillPrice()" required></select>
+        </div>
 	        <div>
 	          <label class="text-xs font-bold text-slate-500">工務人員</label>
 	          <select id="r-staff" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></select>
@@ -905,7 +905,7 @@
       <div class="grid grid-cols-12 gap-2 items-end">
         <div class="col-span-5">
           <label class="text-xs font-bold text-slate-500">項目類型 *</label>
-          <select id="r-type" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></select>
+          <select id="r-type" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" onchange="autoFillPrice()"></select>
         </div>
         <div class="col-span-2">
           <label class="text-xs font-bold text-slate-500">數量</label>
@@ -1028,6 +1028,13 @@
       <div>
         <label class="text-xs font-bold text-slate-500">公司地址</label>
         <input type="text" id="c-address" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="選填">
+      </div>
+      <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+        <h4 class="font-bold text-indigo-700 mb-3 flex items-center text-xs"><i class="fas fa-tags mr-2"></i>客戶專屬工項單價設定</h4>
+        <div id="c-price-list" class="space-y-2 max-h-40 overflow-y-auto pr-2">
+          <!-- 動態載入工項單價輸入框 -->
+        </div>
+        <p class="text-[10px] text-indigo-400 mt-2">💡 提示：在此設定該客戶的專屬單價，新增紀錄時會自動帶出。</p>
       </div>
       <div class="flex gap-3 pt-2">
         <button onclick="closeModal('client-modal')" class="flex-1 bg-slate-100 py-3 rounded-xl text-sm font-bold hover:bg-slate-200 transition">取消</button>
@@ -1828,6 +1835,21 @@ function openClientModal(idx = null) {
     document.getElementById('c-staffs').value = Array.isArray(c.staffs) ? c.staffs.join(', ') : (c.staffs || '');
     document.getElementById('c-address').value = c.address || '';
   }
+  
+  // 渲染工項單價設定列表
+  const priceListDiv = document.getElementById('c-price-list');
+  const clientPrices = idx !== null ? (clients[idx].prices || {}) : {};
+  priceListDiv.innerHTML = workTypes.map(t => {
+    const typeName = typeof t === 'string' ? t : t.name;
+    const price = clientPrices[typeName] || '';
+    return `
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-600 flex-1 truncate">${typeName}</span>
+        <input type="number" data-type="${typeName}" class="c-type-price w-24 border border-slate-200 p-1.5 rounded-lg text-sm text-right" placeholder="單價" value="${price}">
+      </div>
+    `;
+  }).join('');
+
   document.getElementById('client-modal').classList.remove('hidden');
 }
 
@@ -1844,7 +1866,12 @@ function saveClient() {
     cutoff: document.getElementById('c-cutoff').value.trim(),
     payment: document.getElementById('c-payment').value.trim(),
     staffs: document.getElementById('c-staffs').value.split(',').map(s => s.trim()).filter(Boolean),
-    address: document.getElementById('c-address').value.trim()
+    address: document.getElementById('c-address').value.trim(),
+    prices: Array.from(document.querySelectorAll('.c-type-price')).reduce((acc, input) => {
+      const price = parseFloat(input.value);
+      if (!isNaN(price)) acc[input.dataset.type] = price;
+      return acc;
+    }, {})
   };
   if (idx !== '') {
     const existing = clients[idx];
@@ -2442,6 +2469,18 @@ function syncStaffDropdown() {
   }
 }
 
+function autoFillPrice() {
+  const clientName = document.getElementById('r-client').value;
+  const typeName = document.getElementById('r-type').value;
+  if (!clientName || !typeName) return;
+
+  const client = clients.find(c => c.name === clientName);
+  if (client && client.prices && client.prices[typeName] !== undefined) {
+    document.getElementById('r-price').value = client.prices[typeName];
+    calcModalTotal();
+  }
+}
+
 function updateFilterStaffs() {
   const val = document.getElementById('filter-client').value;
   const c = clients.find(cl => cl.name === val);
@@ -2534,7 +2573,13 @@ function executePrint(mode) {
   const thead = document.getElementById('p-thead');
   const tbody = document.getElementById('p-tbody');
   const tfoot = document.getElementById('p-footer-extra');
-  const grouped = filtered.reduce((acc, r) => { if (!acc[r.site]) acc[r.site] = []; acc[r.site].push(r); return acc; }, {});
+  const grouped = filtered.reduce((acc, r) => {
+    const pObj = projects.find(p => p.id === r.projectId);
+    const siteKey = pObj ? `${pObj.name} - ${r.site}` : r.site;
+    if (!acc[siteKey]) acc[siteKey] = [];
+    acc[siteKey].push(r);
+    return acc;
+  }, {});
   let html = '', grandTotalAmt = 0, grandTotalQty = 0;
   
   // 加總雜項費用
@@ -2549,8 +2594,8 @@ function executePrint(mode) {
 
   if (mode === 'quantity') {
     thead.innerHTML = `<tr><th width="15%">日期</th><th width="60%">項目 / 備註</th><th width="25%">數量</th></tr>`;
-    for (const site in grouped) {
-      html += `<tr><td colspan="3" class="site-group-header">工地：${site}</td></tr>`;
+      for (const site in grouped) {
+      html += `<tr><td colspan="3" class="site-group-header">${site.includes(' - ') ? '專案工地' : '工地'}：${site}</td></tr>`;
       let siteStats = {};
       let siteExtraStay = 0, siteExtraOil = 0, siteExtraOther = 0;
       
@@ -2558,10 +2603,12 @@ function executePrint(mode) {
         const typeObj = workTypes.find(t => (typeof t === 'string' ? t : t.name) === r.type);
         const isStats = typeObj ? (typeObj.includeStats !== false) : true;
         const unit = typeObj ? (typeObj.unit || 'M') : 'M';
-        const isDotWorker = r.type.includes('點工');
+        const isDotWorker = r.type.includes('點工') || r.type.includes('補工');
+        const isOil = r.type.includes('油資') || r.type.includes('郵資');
         
         let displayVal = '';
         if (isDotWorker) displayVal = `${r.qty} 工`;
+        else if (isOil) displayVal = `${r.qty} 式`;
         else if (!isStats) displayVal = `1 式`;
         else { displayVal = `${r.qty} ${unit}`; grandTotalQty += r.qty; }
         
@@ -2585,6 +2632,7 @@ function executePrint(mode) {
       for (let type in siteStats) {
         const s = siteStats[type];
         if (s.isDotWorker) statStrings.push(`${type}：${s.qty.toFixed(2)} 工`);
+        else if (type.includes('油資') || type.includes('郵資')) statStrings.push(`${type}：${s.qty.toFixed(2)} 式`);
         else if (!s.isStats) statStrings.push(`${type}：$${s.amt.toLocaleString()}`);
         else statStrings.push(`${type}：${s.qty.toFixed(2)} ${s.unit}`);
       }
@@ -2599,7 +2647,7 @@ function executePrint(mode) {
   } else {
     thead.innerHTML = `<tr><th width="12%">日期</th><th width="20%">項目</th><th width="12%">數量</th><th width="12%">單價</th><th width="12%">金額</th><th width="32%">備註</th></tr>`;
     for (const site in grouped) {
-      html += `<tr><td colspan="6" class="site-group-header">工地：${site}</td></tr>`;
+      html += `<tr><td colspan="6" class="site-group-header">${site.includes(' - ') ? '專案工地' : '工地'}：${site}</td></tr>`;
       let siteAmt = 0;
       let siteExtraStay = 0, siteExtraOil = 0, siteExtraOther = 0;
 
