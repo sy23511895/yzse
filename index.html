@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>昱正工程管理系統</title>
+  <title>昱正工程行管理系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -30,6 +30,8 @@
     .badge-paid { background: #d1fae5; color: #059669; }
     .badge-invoiced { background: #dbeafe; color: #2563eb; }
     .badge-pending { background: #f1f5f9; color: #64748b; }
+    .badge-worker-paid { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+    .badge-worker-pending { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; }
 
     /* 搜尋清除按鈕 */
     .search-wrap { position: relative; }
@@ -100,7 +102,7 @@
     <div class="mb-6">
       <img src="yuzheng_logo_v2_skirting.png" alt="昱正工程行 Logo" class="w-32 h-auto mx-auto">
     </div>
-    <h2 class="text-2xl font-black mb-1">踢腳板工程管理</h2>
+    <h2 class="text-2xl font-black mb-1">工程管理系統</h2>
     <p class="text-slate-400 text-xs mb-6">Pro v7.2 · 雙重自動備份</p>
     <input type="password" id="sys-password" onkeydown="if(event.key==='Enter') checkPassword()"
       class="w-full border-2 border-slate-200 p-3 rounded-xl text-center text-2xl tracking-widest mb-4 focus:border-indigo-500 outline-none"
@@ -162,8 +164,8 @@
 <div id="app-wrapper">
   <div class="flex min-h-screen overflow-hidden">
     <!-- 側邊導覽列 -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform -translate-x-full lg:translate-x-0 lg:static lg:inset-0 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
-      <div class="p-6 flex flex-col items-center border-b border-slate-800 cursor-pointer" onclick="switchView('main')">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-[#81D8D0] text-slate-800 transform -translate-x-full lg:translate-x-0 lg:static lg:inset-0 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
+      <div class="p-6 flex flex-col items-center border-b border-[#6ecbc2] cursor-pointer" onclick="switchView('main')">
         <img src="yuzheng_logo_v2_skirting.png" alt="昱正工程行 Logo" class="w-24 h-auto mb-2">
         <div class="text-center">
           <h1 class="text-lg font-black leading-tight">工程管理系統</h1>
@@ -171,65 +173,87 @@
         </div>
       </div>
       
-      <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-        <div class="pb-4">
-          <button onclick="openRecordModal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-xl font-black shadow-lg transition flex items-center justify-center space-x-2">
-            <i class="fas fa-plus"></i>
-            <span>新增工程紀錄</span>
-          </button>
-        </div>
-        
-        <button onclick="switchView('main')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition group">
-          <i class="fas fa-list-ul text-slate-400 group-hover:text-white"></i>
-          <span class="font-bold text-sm">工程紀錄</span>
+      <nav class="flex-1 px-4 py-6 space-y-3 overflow-y-auto">
+        <button onclick="openRecordModal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-xl font-black shadow-lg transition flex items-center justify-center space-x-2">
+          <i class="fas fa-plus"></i>
+          <span>新增紀錄</span>
         </button>
-        <button onclick="switchView('project-mgmt')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition group">
-          <i class="fas fa-project-diagram text-slate-400 group-hover:text-white"></i>
+        
+        <button onclick="switchView('project-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-project-diagram text-slate-700 group-hover:text-slate-900"></i>
           <span class="font-bold text-sm">專案管理</span>
         </button>
-                <button onclick="switchView('quotation')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition group">
-          <i class="fas fa-file-invoice text-slate-400 group-hover:text-white"></i>
-          <span class="font-bold text-sm">報價單系統</span>
+
+        <button onclick="switchView('main')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-list-ul text-slate-700 group-hover:text-slate-900"></i>
+          <span class="font-bold text-sm">工程紀錄</span>
         </button>
-        <button onclick="switchView('stats')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition group">
-          <i class="fas fa-chart-bar text-slate-400 group-hover:text-white"></i>
-          <span class="font-bold text-sm">數據統計</span>
+
+        <button onclick="switchView('worker-records')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-clipboard-list text-slate-700 group-hover:text-slate-900"></i>
+          <span class="font-bold text-sm">施工紀錄</span>
         </button>
-        <button onclick="switchView('client-mgmt')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition group">
-          <i class="fas fa-users-cog text-slate-400 group-hover:text-white"></i>
+
+        <button onclick="switchView('invoice-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-history text-slate-700 group-hover:text-slate-900"></i>
+          <span class="font-bold text-sm">請款紀錄</span>
+        </button>
+
+        <button onclick="switchView('client-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-users-cog text-slate-700 group-hover:text-slate-900"></i>
           <span class="font-bold text-sm">客戶管理</span>
         </button>
-        <button onclick="switchView('type-mgmt')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition group">
-          <i class="fas fa-list-check text-slate-400 group-hover:text-white"></i>
-          <span class="font-bold text-sm">工程項目類型</span>
+
+        <button onclick="switchView('worker-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-hammer text-slate-700 group-hover:text-slate-900"></i>
+          <span class="font-bold text-sm">師傅管理</span>
         </button>
-        <button onclick="switchView('settings')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition group">
-          <i class="fas fa-cog text-slate-400 group-hover:text-white"></i>
+
+        <button onclick="switchView('type-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-list-check text-slate-700 group-hover:text-slate-900"></i>
+          <span class="font-bold text-sm">項目管理</span>
+        </button>
+
+        <button onclick="switchView('settings')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-cog text-slate-700 group-hover:text-slate-900"></i>
           <span class="font-bold text-sm">系統設定</span>
+        </button>
+
+        <button onclick="switchView('quotation')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-file-invoice text-slate-700 group-hover:text-slate-900"></i>
+          <span class="font-bold text-sm">報價系統</span>
+        </button>
+
+        <button onclick="switchView('stats')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-chart-bar text-slate-700 group-hover:text-slate-900"></i>
+          <span class="font-bold text-sm">數據統計</span>
         </button>
         
         <div class="pt-6">
           <!-- 列印與匯出區塊 -->
-          <div class="pt-4 border-t border-slate-800 space-y-2">
+          <div class="pt-4 border-t border-[#6ecbc2] space-y-2">
             <div class="relative">
-              <button onclick="togglePrintMenu()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 transition group">
+              <button onclick="togglePrintMenu()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition group shadow-lg">
                 <i class="fas fa-print"></i>
                 <span class="font-bold text-sm">列印報表</span>
                 <i class="fas fa-chevron-down text-[10px] ml-auto"></i>
               </button>
               <div id="print-dropdown" class="hidden absolute left-0 bottom-full mb-2 w-full bg-slate-800 rounded-xl shadow-2xl border border-slate-700 z-50 overflow-hidden">
+                <button onclick="executePrint('invoice')" class="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 border-b border-slate-700 flex items-center">
+                  <i class="fas fa-file-invoice-dollar mr-2 text-indigo-400"></i>請款單
+                </button>
                 <button onclick="executePrint('report')" class="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 border-b border-slate-700 flex items-center">
                   <i class="fas fa-file-alt mr-2 text-indigo-400"></i>工程明細
                 </button>
                 <button onclick="executePrint('quantity')" class="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 border-b border-slate-700 flex items-center">
                   <i class="fas fa-ruler mr-2 text-indigo-400"></i>工程數量
                 </button>
-                <button onclick="executePrint('invoice')" class="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 flex items-center">
-                  <i class="fas fa-file-invoice-dollar mr-2 text-indigo-400"></i>請款單
+                <button onclick="executePrint('worker')" class="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 flex items-center">
+                  <i class="fas fa-user-check mr-2 text-indigo-400"></i>師傅對帳單
                 </button>
               </div>
             </div>
-            <button onclick="exportToExcel()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 transition group">
+            <button onclick="exportToExcel()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 transition group shadow-lg">
               <i class="fas fa-file-excel"></i>
               <span class="font-bold text-sm">匯出 Excel</span>
             </button>
@@ -237,7 +261,7 @@
         </div>
       </nav>
 
-      <div class="p-4 border-t border-slate-800 space-y-3">
+      <div class="p-4 border-t border-[#6ecbc2] space-y-3">
         <!-- 雲端同步狀態 -->
         <div id="cloud-status-tag" class="flex items-center bg-slate-800/50 px-3 py-2.5 rounded-xl border border-slate-700/50">
           <div id="cloud-dot" class="w-2 h-2 rounded-full bg-slate-500 mr-2"></div>
@@ -287,6 +311,10 @@
           <div class="space-y-1">
             <label class="text-xs font-bold text-slate-500">工務人員</label>
             <select id="filter-staff" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm"></select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">施工師傅</label>
+            <select id="filter-worker" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="renderRecords()"></select>
           </div>
           <div class="space-y-1">
             <label class="text-xs font-bold text-slate-500">工地名稱</label>
@@ -348,19 +376,37 @@
       <!-- 紀錄列表 -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-          <span class="font-bold text-slate-700"><i class="fas fa-list mr-2 text-indigo-500"></i>工程紀錄</span>
+          <div class="flex items-center gap-4">
+            <span class="font-bold text-slate-700"><i class="fas fa-list mr-2 text-indigo-500"></i>工程紀錄</span>
+            <div id="rec-batch-actions" class="hidden flex gap-2">
+              <button onclick="batchMarkInvoiced()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition">
+                <i class="fas fa-file-invoice mr-1"></i>已請款
+              </button>
+              <button onclick="batchMarkPaid()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition">
+                <i class="fas fa-money-bill-wave mr-1"></i>已入帳
+              </button>
+              <button onclick="batchMarkCompleted()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition">
+                <i class="fas fa-check-circle mr-1"></i>已完工
+              </button>
+            </div>
+          </div>
           <span id="record-count" class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">共 0 筆</span>
         </div>
         <div class="table-container">
           <table class="w-full text-sm text-left">
             <thead>
               <tr class="border-b border-slate-100">
+                <th class="p-4 w-10">
+                  <input type="checkbox" id="rec-select-all" class="w-4 h-4 accent-indigo-600" onchange="toggleSelectAllRecords()">
+                </th>
                 <th class="p-4 text-xs font-bold text-slate-500">日期</th>
                 <th class="p-4 text-xs font-bold text-slate-500">工地 / 客戶</th>
                 <th class="p-4 text-xs font-bold text-slate-500">項目 / 備註</th>
                 <th class="p-4 text-xs font-bold text-slate-500 text-right">數量 / 單價</th>
                 <th class="p-4 text-xs font-bold text-slate-500 text-right">合計 / 預收</th>
-                <th class="p-4 text-xs font-bold text-slate-500 text-center">狀態</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-center">工地狀態</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-center">款項狀態</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-center">師傅帳款</th>
                 <th class="p-4 text-xs font-bold text-slate-500 text-center">操作</th>
               </tr>
             </thead>
@@ -607,6 +653,42 @@
       </div>
         </section>
 
+    <!-- ===== 頁面：請款單紀錄 ===== -->
+    <section id="view-invoice-mgmt" class="view-section fade-in">
+      <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center space-x-3">
+          <div class="bg-indigo-600 p-3 rounded-2xl shadow-lg shadow-indigo-200"><i class="fas fa-history text-white text-xl"></i></div>
+          <div>
+            <h2 class="text-2xl font-black text-slate-800">請款單紀錄</h2>
+            <p class="text-slate-400 text-xs font-bold tracking-widest uppercase">Invoice History</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="table-container">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50/50 border-b border-slate-100">
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">日期</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">請款單號</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">客戶 / 工地</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">總額</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">操作</th>
+              </tr>
+            </thead>
+            <tbody id="invoice-history-list" class="divide-y divide-slate-50"></tbody>
+          </table>
+          <div id="invoice-history-empty" class="p-20 text-center hidden">
+            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-file-invoice-dollar text-slate-200 text-3xl"></i>
+            </div>
+            <p class="text-slate-400 font-bold">目前尚無請款單紀錄</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== 頁面：專案管理 ===== -->
     <section id="view-project-mgmt" class="view-section fade-in">
       <div class="flex items-center justify-between mb-8">
@@ -667,6 +749,20 @@
             <label class="text-xs font-bold text-slate-500">工務人員</label>
             <select id="p-staff" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></select>
           </div>
+          <div>
+            <label class="text-xs font-bold text-slate-500">工地地址</label>
+            <input type="text" id="p-address" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="選填">
+          </div>
+          <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+            <div class="flex justify-between items-center mb-3">
+              <h4 class="font-bold text-indigo-700 flex items-center text-xs"><i class="fas fa-tags mr-2"></i>專案專屬工項單價設定</h4>
+              <button onclick="addProjectPriceRow()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold"><i class="fas fa-plus-circle mr-1"></i>增加項目</button>
+            </div>
+            <div id="p-price-list" class="space-y-2 max-h-40 overflow-y-auto pr-2">
+              <!-- 動態載入工項單價輸入框 -->
+            </div>
+            <p class="text-[10px] text-indigo-400 mt-2">💡 提示：在此設定該專案的專屬單價，新增紀錄時會自動帶出。</p>
+          </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs font-bold text-slate-500">進場日期</label>
@@ -684,6 +780,136 @@
         </div>
       </div>
     </div>
+
+    <!-- ===== 施工紀錄頁面 ===== -->
+    <section id="view-worker-records" class="view-section fade-in">
+      <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center space-x-3">
+          <div class="bg-orange-600 p-3 rounded-2xl shadow-lg shadow-orange-200"><i class="fas fa-clipboard-list text-white text-xl"></i></div>
+          <div>
+            <h2 class="text-2xl font-black text-slate-800">施工紀錄</h2>
+            <p class="text-slate-400 text-xs font-bold tracking-widest uppercase">Construction Records</p>
+          </div>
+        </div>
+        <div id="wr-batch-actions" class="hidden flex gap-2">
+          <button onclick="batchDeleteWorkerRecords()" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg transition">
+            <i class="fas fa-trash-alt mr-2"></i>批次刪除
+          </button>
+          <button onclick="batchMarkWorkerPaid()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg transition">
+            <i class="fas fa-check-double mr-2"></i>標記工資已付
+          </button>
+        </div>
+      </div>
+
+      <!-- 篩選器 -->
+      <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">選擇師傅</label>
+            <select id="wr-filter-worker" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm focus:border-orange-500 outline-none" onchange="renderWorkerRecords()"></select>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">工資狀態</label>
+            <select id="wr-filter-status" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm focus:border-orange-500 outline-none" onchange="renderWorkerRecords()">
+              <option value="">全部</option>
+              <option value="paid">工資已付</option>
+              <option value="unpaid">工資未領</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">開始日期</label>
+            <input type="date" id="wr-filter-start" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm focus:border-orange-500 outline-none" onchange="renderWorkerRecords()">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">結束日期</label>
+            <input type="date" id="wr-filter-end" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm focus:border-orange-500 outline-none" onchange="renderWorkerRecords()">
+          </div>
+          <div class="flex items-end">
+            <button onclick="resetWorkerRecordFilter()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl font-bold text-sm transition">重設篩選</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 統計卡片 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <p class="text-slate-400 text-xs font-bold mb-1">總施工次數</p>
+          <h3 class="text-2xl font-black text-slate-800" id="wr-stat-count">0</h3>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <p class="text-slate-400 text-xs font-bold mb-1">總施工數量</p>
+          <h3 class="text-2xl font-black text-orange-600" id="wr-stat-qty">0</h3>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <p class="text-slate-400 text-xs font-bold mb-1">總工資金額</p>
+          <h3 class="text-2xl font-black text-emerald-600" id="wr-stat-amount">$0</h3>
+        </div>
+      </div>
+
+      <!-- 紀錄表格 -->
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50/50 border-b border-slate-100">
+                <th class="p-4 w-10">
+                  <input type="checkbox" id="wr-select-all" class="w-4 h-4 accent-orange-600" onchange="toggleSelectAllWorkerRecords()">
+                </th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">日期</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">工地/細節</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">項目</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">數量</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">工資單價</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">合計</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">狀態</th>
+                <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">操作</th>
+              </tr>
+            </thead>
+            <tbody id="worker-records-list"></tbody>
+          </table>
+        </div>
+        <div id="worker-records-empty" class="p-20 text-center hidden">
+          <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-clipboard-list text-slate-200 text-3xl"></i>
+          </div>
+          <p class="text-slate-400 font-bold">目前尚無符合條件的施工紀錄</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 師傅管理頁面 ===== -->
+    <section id="view-worker-mgmt" class="view-section fade-in">
+      <div class="flex justify-between items-center mb-5">
+        <h2 class="text-2xl font-black flex items-center"><i class="fas fa-hammer mr-3 text-orange-600"></i>師傅管理</h2>
+        <div class="flex gap-2">
+          <button onclick="openWorkerModal()" class="bg-orange-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg hover:bg-orange-700 transition flex items-center">
+            <i class="fas fa-plus-circle mr-2"></i>新增師傅
+          </button>
+          <button onclick="switchView('main')" class="text-slate-500 hover:text-indigo-600 font-bold text-sm transition">
+            <i class="fas fa-arrow-left mr-1"></i>返回
+          </button>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 border-b">
+              <tr>
+                <th class="p-4 text-xs font-bold text-slate-500">師傅姓名</th>
+                <th class="p-4 text-xs font-bold text-slate-500">電話</th>
+                <th class="p-4 text-xs font-bold text-slate-500">備註</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-center">操作</th>
+              </tr>
+            </thead>
+            <tbody id="worker-list-table" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+        <div id="worker-empty" class="hidden py-16 text-center text-slate-400">
+          <i class="fas fa-user-slash text-4xl mb-3 block"></i>
+          <p class="font-bold">尚未建立師傅資料</p>
+        </div>
+      </div>
+    </section>
 
     <!-- ===== 工程項目類型管理頁面 ===== -->
     <section id="view-type-mgmt" class="view-section fade-in">
@@ -747,6 +973,96 @@
 <div id="invoice-print-area" class="invoice-print-area"></div>
 
 <!-- 工程項目類型編輯 Modal -->
+<!-- 外調師傅編輯 Modal -->
+    <!-- 施工紀錄編輯 Modal -->
+    <div id="worker-record-edit-modal" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center z-[10002] p-4">
+      <div class="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="text-xl font-black">編輯施工紀錄</h3>
+          <button onclick="closeModal('worker-record-edit-modal')" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-4">
+          <input type="hidden" id="wre-id">
+          <div>
+            <label class="text-xs font-bold text-slate-500">施工數量</label>
+            <input type="number" id="wre-qty" step="0.01" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="輸入數量">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-500">師傅工資單價</label>
+            <input type="number" id="wre-price" step="1" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="輸入單價">
+          </div>
+	          <div class="grid grid-cols-2 gap-3">
+	            <div class="flex items-center gap-3 border border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-orange-50 transition">
+	              <input type="checkbox" id="wre-paid" class="w-4 h-4 accent-orange-600">
+	              <label for="wre-paid" class="text-sm font-bold text-orange-600 cursor-pointer"><i class="fas fa-hammer mr-1"></i>工資已付</label>
+	            </div>
+	            <div class="flex items-center gap-3 border border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-emerald-50 transition">
+	              <input type="checkbox" id="wre-completed" class="w-4 h-4 accent-emerald-600">
+	              <label for="wre-completed" class="text-sm font-bold text-emerald-600 cursor-pointer"><i class="fas fa-check-circle mr-1"></i>已完工</label>
+	            </div>
+	          </div>
+          <div class="flex gap-3 pt-2">
+            <button onclick="closeModal('worker-record-edit-modal')" class="flex-1 bg-slate-100 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition">取消</button>
+            <button onclick="saveWorkerRecordEdit()" class="flex-1 bg-orange-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-orange-700 transition">
+              <i class="fas fa-save mr-1"></i>儲存修改
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="worker-modal" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center z-[10002] p-4">
+  <div class="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="text-xl font-black" id="worker-modal-title">新增師傅</h3>
+      <button onclick="closeModal('worker-modal')" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="space-y-4">
+      <input type="hidden" id="w-edit-idx">
+      <div>
+        <label class="text-xs font-bold text-slate-500">師傅姓名 *</label>
+        <input type="text" id="w-name" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="輸入姓名">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-slate-500">聯絡電話</label>
+        <input type="text" id="w-phone" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="輸入電話">
+      </div>
+      <div class="flex items-center gap-2 py-2">
+        <input type="checkbox" id="w-has-company" class="w-4 h-4 accent-orange-600" onchange="toggleWorkerCompanyFields()">
+        <label for="w-has-company" class="text-sm font-bold text-slate-700 cursor-pointer">是否有行號</label>
+      </div>
+      <div id="worker-company-fields" class="hidden space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+        <div>
+          <label class="text-xs font-bold text-slate-500">行號名稱</label>
+          <input type="text" id="w-company-name" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="輸入行號名稱">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-500">行號統一編號</label>
+          <input type="text" id="w-company-tax" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="輸入統一編號">
+        </div>
+      </div>
+      <div class="p-4 bg-orange-50 rounded-xl border border-orange-100">
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="font-bold text-orange-700 flex items-center text-xs"><i class="fas fa-tags mr-2"></i>師傅專屬工項單價設定</h4>
+          <button onclick="addWorkerPriceRow()" class="text-orange-600 hover:text-orange-800 text-xs font-bold"><i class="fas fa-plus-circle mr-1"></i>增加項目</button>
+        </div>
+        <div id="w-price-list" class="space-y-2 max-h-40 overflow-y-auto pr-2">
+          <!-- 動態載入工項單價輸入框 -->
+        </div>
+        <p class="text-[10px] text-orange-400 mt-2">💡 提示：在此設定該師傅的專屬單價，新增紀錄時會自動帶出。</p>
+      </div>
+      <div>
+        <label class="text-xs font-bold text-slate-500">備註</label>
+        <textarea id="w-note" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" rows="3" placeholder="選填備註..."></textarea>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeModal('worker-modal')" class="flex-1 bg-slate-100 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition">取消</button>
+        <button onclick="saveWorker()" class="flex-1 bg-orange-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-orange-700 transition">儲存師傅</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="type-edit-modal" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center z-[10002] p-4">
   <div class="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
     <div class="flex justify-between items-center mb-5">
@@ -893,11 +1209,21 @@
           <label class="text-xs font-bold text-slate-500">客戶 *</label>
           <select id="r-client" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" onchange="syncStaffDropdown(); autoFillPrice()" required></select>
         </div>
-	        <div>
-	          <label class="text-xs font-bold text-slate-500">工務人員</label>
-	          <select id="r-staff" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></select>
-	        </div>
-	      </div>
+		        <div>
+		          <label class="text-xs font-bold text-slate-500">工務人員</label>
+		          <select id="r-staff" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></select>
+		        </div>
+		      </div>
+		      <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs font-bold text-slate-500">施工師傅</label>
+            <select id="r-worker" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" onchange="autoFillWorkerPrice()"></select>
+          </div>
+		        <div>
+		          <label class="text-xs font-bold text-slate-500">師傅工資單價</label>
+		          <input type="number" id="r-worker-price" step="1" placeholder="給師傅的單價" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1 bg-orange-50">
+		        </div>
+		      </div>
 	      <div>
 	        <label class="text-xs font-bold text-slate-500">工地/樓層/階段細節 *</label>
 	        <input type="text" id="r-site" placeholder="例如：3樓 A區 或 第一階段" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" required>
@@ -959,6 +1285,14 @@
         <label class="flex items-center gap-3 border border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-emerald-50 transition">
           <input type="checkbox" id="r-paid" class="w-4 h-4 accent-emerald-600">
           <span class="text-sm font-bold text-emerald-600"><i class="fas fa-check-circle mr-1"></i>已入帳</span>
+        </label>
+        <label class="flex items-center gap-3 border border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-orange-50 transition">
+          <input type="checkbox" id="r-worker-paid" class="w-4 h-4 accent-orange-600">
+          <span class="text-sm font-bold text-orange-600"><i class="fas fa-hammer mr-1"></i>工資已付</span>
+        </label>
+        <label class="flex items-center gap-3 border border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-amber-50 transition">
+          <input type="checkbox" id="r-is-completed" class="w-4 h-4 accent-amber-600">
+          <span class="text-sm font-bold text-amber-600"><i class="fas fa-check-circle mr-1"></i>已完工</span>
         </label>
       </div>
       <div class="flex flex-col sm:flex-row gap-3 pt-2">
@@ -1071,6 +1405,47 @@
 // 報價單系統邏輯
 // ============================================================
 let quotations = JSON.parse(localStorage.getItem('yuzheng_quotations') || '[]');
+let invoiceHistory = JSON.parse(localStorage.getItem('yuzheng_invoice_history') || '[]');
+
+function renderInvoiceHistoryList() {
+  const tbody = document.getElementById('invoice-history-list');
+  const empty = document.getElementById('invoice-history-empty');
+  if (invoiceHistory.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  tbody.innerHTML = invoiceHistory.sort((a, b) => new Date(b.createDate) - new Date(a.createDate)).map((inv, idx) => `
+    <tr>
+      <td class="p-4 font-medium">${inv.createDate.split(' ')[0]}</td>
+      <td class="p-4 font-bold text-indigo-600">${inv.invNo}</td>
+      <td class="p-4">
+        <div class="font-bold text-slate-700">${inv.clientInfo.name}</div>
+        <div class="text-xs text-slate-400">${inv.siteName || '--'}</div>
+      </td>
+      <td class="p-4 text-right font-black text-slate-800">$${inv.grandTotal.toLocaleString()}</td>
+      <td class="p-4 text-center">
+        <button onclick="reprintInvoice(${idx})" class="text-indigo-500 hover:text-indigo-700 mr-3 transition" title="重新列印"><i class="fas fa-print"></i></button>
+        <button onclick="deleteInvoiceHistory(${idx})" class="text-slate-300 hover:text-rose-500 transition" title="刪除紀錄"><i class="fas fa-trash-alt"></i></button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function reprintInvoice(idx) {
+  const inv = invoiceHistory[idx];
+  renderInvoiceModal(inv, true); // true 表示不重新保存
+}
+
+function deleteInvoiceHistory(idx) {
+  if (!confirm('確定要刪除這筆請款單紀錄嗎？')) return;
+  invoiceHistory.splice(idx, 1);
+  localStorage.setItem('yuzheng_invoice_history', JSON.stringify(invoiceHistory));
+  save(); // 觸發雲端同步
+  renderInvoiceHistoryList();
+  showToast('紀錄已刪除');
+}
 
 function renderQuotationList() {
   const tbody = document.getElementById('quotation-list');
@@ -1403,6 +1778,8 @@ function loadLocal() {
   records = JSON.parse(localStorage.getItem('SKIRTING_V7')) || [];
   clients = JSON.parse(localStorage.getItem('CLIENT_V7')) || [];
   projects = JSON.parse(localStorage.getItem('PROJECTS_V7')) || [];
+  workers = JSON.parse(localStorage.getItem('WORKERS_V7')) || [];
+  invoiceHistory = JSON.parse(localStorage.getItem('yuzheng_invoice_history') || '[]');
   const savedTypes = localStorage.getItem('WORKTYPES_V7');
   if (savedTypes) workTypes = JSON.parse(savedTypes);
 }
@@ -1411,13 +1788,15 @@ function saveLocal() {
   localStorage.setItem('SKIRTING_V7', JSON.stringify(records));
   localStorage.setItem('CLIENT_V7', JSON.stringify(clients));
   localStorage.setItem('PROJECTS_V7', JSON.stringify(projects));
+  localStorage.setItem('WORKERS_V7', JSON.stringify(workers));
   localStorage.setItem('WORKTYPES_V7', JSON.stringify(workTypes));
+  localStorage.setItem('yuzheng_invoice_history', JSON.stringify(invoiceHistory));
 }
 
 function save() {
   saveLocal();
   // 背景同步，不處理錯誤或成功回饋
-  fetch(cloudUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify({records, clients, projects, workTypes}) }).catch(e => console.error("Background sync failed", e));
+  fetch(cloudUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify({records, clients, projects, workTypes, workers, invoiceHistory}) }).catch(e => console.error("Background sync failed", e));
 }
 
 // ============================================================
@@ -1426,6 +1805,7 @@ function save() {
 let records = [];
 let clients = [];
 let projects = [];
+let workers = [];
 let workTypes = [
   { name: '上牆踢腳板', unit: 'M', includeStats: true },
   { name: 'PVC發泡踢腳板', unit: 'M', includeStats: true },
@@ -1741,11 +2121,17 @@ function switchView(view) {
     el.classList.add('fade-in');
   }
   if (view === 'client-mgmt') renderClientList();
+  if (view === 'worker-mgmt') renderWorkerList();
+  if (view === 'worker-records') {
+    updateWorkerRecordSelect();
+    renderWorkerRecords();
+  }
   if (view === 'project-mgmt') renderProjects();
   if (view === 'stats') renderStats();
   if (view === 'settings') updateSettingsInfo();
   if (view === 'type-mgmt') renderTypeList();
   if (view === 'quotation') renderQuotationList();
+  if (view === 'invoice-mgmt') renderInvoiceHistoryList();
   document.getElementById('print-dropdown').classList.add('hidden');
   
   // 切換視圖後自動關閉手機版側邊欄
@@ -1930,12 +2316,42 @@ function renderProjects() {
 function openProjectModal() {
   document.getElementById('p-edit-id').value = '';
   document.getElementById('p-name').value = '';
+  document.getElementById('p-address').value = '';
   document.getElementById('p-start-date').value = '';
   document.getElementById('p-end-date').value = '';
   document.getElementById('p-client').innerHTML = clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
   syncProjectStaffDropdown();
+  renderProjectPriceRows([]);
   document.getElementById('project-modal-title').textContent = '建立新專案';
   document.getElementById('project-modal').classList.remove('hidden');
+}
+
+function addProjectPriceRow(type = '', price = '') {
+  const container = document.getElementById('p-price-list');
+  const div = document.createElement('div');
+  div.className = 'flex gap-2 items-center';
+  div.innerHTML = `
+    <select class="p-type-select flex-1 border border-slate-200 p-2 rounded-lg text-xs">
+      <option value="">-- 選擇項目 --</option>
+      ${workTypes.map(t => {
+        const name = typeof t === 'string' ? t : t.name;
+        return `<option value="${name}" ${name === type ? 'selected' : ''}>${name}</option>`;
+      }).join('')}
+    </select>
+    <input type="number" class="p-price-input w-24 border border-slate-200 p-2 rounded-lg text-xs" placeholder="單價" value="${price}">
+    <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-rose-500"><i class="fas fa-times-circle"></i></button>
+  `;
+  container.appendChild(div);
+}
+
+function renderProjectPriceRows(prices = []) {
+  const container = document.getElementById('p-price-list');
+  container.innerHTML = '';
+  if (prices.length === 0) {
+    addProjectPriceRow(); // 預設一個
+  } else {
+    prices.forEach(p => addProjectPriceRow(p.type, p.price));
+  }
 }
 
 function syncProjectStaffDropdown() {
@@ -1953,22 +2369,32 @@ function syncProjectStaffDropdown() {
 function saveProject() {
   const id = document.getElementById('p-edit-id').value || Date.now().toString();
   const name = document.getElementById('p-name').value.trim();
+  const address = document.getElementById('p-address').value.trim();
   const client = document.getElementById('p-client').value;
   const staff = document.getElementById('p-staff').value;
   const startDate = document.getElementById('p-start-date').value;
   const endDate = document.getElementById('p-end-date').value;
+  
+  const prices = [];
+  document.querySelectorAll('#p-price-list > div').forEach(div => {
+    const type = div.querySelector('.p-type-select').value;
+    const price = parseFloat(div.querySelector('.p-price-input').value) || 0;
+    if (type) prices.push({ type, price });
+  });
   
   if (!name) return showToast('請輸入專案名稱', 'error');
   
   const idx = projects.findIndex(p => p.id === id);
   if (idx > -1) {
     projects[idx].name = name;
+    projects[idx].address = address;
     projects[idx].client = client;
     projects[idx].staff = staff;
     projects[idx].startDate = startDate;
     projects[idx].endDate = endDate;
+    projects[idx].prices = prices;
   } else {
-    projects.push({ id, name, client, staff, startDate, endDate, createdAt: new Date().toISOString().slice(0, 10) });
+    projects.push({ id, name, address, client, staff, startDate, endDate, prices, createdAt: new Date().toISOString().slice(0, 10) });
   }
   
   save();
@@ -1983,12 +2409,14 @@ function editProject(id) {
   if (!p) return;
   document.getElementById('p-edit-id').value = p.id;
   document.getElementById('p-name').value = p.name;
+  document.getElementById('p-address').value = p.address || '';
   document.getElementById('p-client').innerHTML = clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
   document.getElementById('p-client').value = p.client;
   syncProjectStaffDropdown();
   document.getElementById('p-staff').value = p.staff || '';
   document.getElementById('p-start-date').value = p.startDate || '';
   document.getElementById('p-end-date').value = p.endDate || '';
+  renderProjectPriceRows(p.prices || []);
   document.getElementById('project-modal-title').textContent = '編輯專案';
   document.getElementById('project-modal').classList.remove('hidden');
 }
@@ -2010,6 +2438,7 @@ function getFilteredRecords() {
   const c = document.getElementById('filter-client').value;
   const pid = document.getElementById('filter-project').value;
   const staff = document.getElementById('filter-staff').value;
+  const worker = document.getElementById('filter-worker').value;
   const site = document.getElementById('filter-site').value.trim().toLowerCase();
   const statusF = document.getElementById('filter-status').value;
 
@@ -2019,6 +2448,7 @@ function getFilteredRecords() {
       && (!c || r.client === c)
       && (!pid || r.projectId === pid)
       && (!staff || r.staff === staff)
+      && (!worker || r.worker === worker)
       && (!site || (r.site && r.site.toLowerCase().includes(site)));
     let matchStatus = true;
     if (statusF === 'paid') matchStatus = r.paid;
@@ -2029,8 +2459,49 @@ function getFilteredRecords() {
   }).sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
+function toggleSelectAllRecords() {
+  const isChecked = document.getElementById('rec-select-all').checked;
+  document.querySelectorAll('.rec-row-checkbox').forEach(cb => cb.checked = isChecked);
+  updateBatchActionsVisibility();
+}
+
+function updateBatchActionsVisibility() {
+  const checkedCount = document.querySelectorAll('.rec-row-checkbox:checked').length;
+  const actions = document.getElementById('rec-batch-actions');
+  if (actions) {
+    if (checkedCount > 0) actions.classList.remove('hidden');
+    else actions.classList.add('hidden');
+  }
+}
+
+function batchMarkInvoiced() {
+  const selectedIds = Array.from(document.querySelectorAll('.rec-row-checkbox:checked')).map(cb => cb.value);
+  if (selectedIds.length === 0) return;
+  records.forEach(r => { if (selectedIds.includes(r.id)) r.invoiced = true; });
+  save(); renderRecords(); showToast(`已將 ${selectedIds.length} 筆紀錄標記為已請款`);
+}
+
+function batchMarkPaid() {
+  const selectedIds = Array.from(document.querySelectorAll('.rec-row-checkbox:checked')).map(cb => cb.value);
+  if (selectedIds.length === 0) return;
+  records.forEach(r => { if (selectedIds.includes(r.id)) r.paid = true; });
+  save(); renderRecords(); showToast(`已將 ${selectedIds.length} 筆紀錄標記為已入帳`);
+}
+
+function batchMarkCompleted() {
+  const selectedIds = Array.from(document.querySelectorAll('.rec-row-checkbox:checked')).map(cb => cb.value);
+  if (selectedIds.length === 0) return;
+  records.forEach(r => { if (selectedIds.includes(r.id)) r.isCompleted = true; });
+  save(); renderRecords(); showToast(`已將 ${selectedIds.length} 筆紀錄標記為已完工`);
+}
+
 function renderRecords() {
   const filtered = [...getFilteredRecords()].reverse();
+  
+  const selectAll = document.getElementById('rec-select-all');
+  if (selectAll) selectAll.checked = false;
+  updateBatchActionsVisibility();
+
   let tQty = 0, tAmt = 0, iAmt = 0, pAmt = 0, uAmt = 0, rAmt = 0;
 
   const html = filtered.map(r => {
@@ -2045,14 +2516,21 @@ function renderRecords() {
     if (r.invoiced) iAmt += (r.total || 0);
     if (!r.paid) { uAmt += (r.total - (r.prepaid || 0)); rAmt += (r.total || 0); }
 
-    const badge = r.paid
-      ? '<span class="badge-paid px-2 py-1 rounded-full text-[10px] font-bold">已入帳</span>'
-      : (r.invoiced
-        ? '<span class="badge-invoiced px-2 py-1 rounded-full text-[10px] font-bold">已請款</span>'
-        : '<span class="badge-pending px-2 py-1 rounded-full text-[10px] font-bold">待收</span>');
+	    const badge = r.paid
+	      ? '<span class="badge-paid px-2 py-1 rounded-full text-[10px] font-bold">已入帳</span>'
+	      : (r.invoiced
+	        ? '<span class="badge-invoiced px-2 py-1 rounded-full text-[10px] font-bold">已請款</span>'
+	        : '<span class="badge-pending px-2 py-1 rounded-full text-[10px] font-bold">待收</span>');
 
-    const pObj = projects.find(p => p.id === r.projectId);
+	    const workerBadge = r.worker
+	      ? (r.workerPaid 
+	        ? '<span class="badge-worker-paid px-2 py-1 rounded-full text-[10px] font-bold"><i class="fas fa-check-double mr-1"></i>工資已付</span>'
+	        : '<span class="badge-worker-pending px-2 py-1 rounded-full text-[10px] font-bold">工資未付</span>')
+	      : '<span class="text-slate-300 text-[10px]">-</span>';
+
+	    const pObj = projects.find(p => p.id === r.projectId);
     const projectTag = pObj ? `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold mr-1">${pObj.name}</span>` : '';
+    const workerTag = r.worker ? `<span class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold mr-1"><i class="fas fa-hammer mr-1"></i>${r.worker}</span>` : '';
 
     const noteHtml = r.note ? ` / <span class="text-rose-500 font-bold">${r.note}</span>` : '';
     const prepaidHtml = r.prepaid ? `<br><span class="text-xs text-amber-500">預收 $${r.prepaid.toLocaleString()}</span>` : '';
@@ -2070,10 +2548,17 @@ function renderRecords() {
       </div>`;
     }
 
+    const completedBadge = r.isCompleted 
+      ? '<span class="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">已完工</span>'
+      : '<span class="px-2 py-1 rounded-full text-[10px] font-bold bg-slate-50 text-slate-400 border border-slate-100">施工中</span>';
+
     return `<tr>
+      <td class="p-4">
+        <input type="checkbox" class="rec-row-checkbox w-4 h-4 accent-indigo-600" value="${r.id}" onchange="updateBatchActionsVisibility()">
+      </td>
       <td class="p-4 text-xs text-slate-500">${r.date}</td>
       <td class="p-4">
-        <div class="font-bold text-slate-800">${projectTag}${r.site}</div>
+        <div class="font-bold text-slate-800">${projectTag}${workerTag}${r.site}</div>
         <div class="text-[10px] text-slate-400 mt-0.5">${r.client} · ${r.staff || '未設工務'}</div>
       </td>
       <td class="p-4">
@@ -2088,10 +2573,21 @@ function renderRecords() {
         ${prepaidHtml}
         ${extraHtml}
       </td>
+      <td class="p-4 text-center">${completedBadge}</td>
       <td class="p-4 text-center">${badge}</td>
       <td class="p-4 text-center">
-        <button onclick="editRec('${r.id}')" class="text-indigo-500 hover:text-indigo-700 mr-2 transition"><i class="fas fa-edit"></i></button>
-        <button onclick="delRec('${r.id}')" class="text-slate-300 hover:text-rose-500 transition"><i class="fas fa-trash-alt"></i></button>
+        <div class="text-[10px] text-slate-500 mb-1">${r.worker || '—'}</div>
+        ${workerBadge}
+      </td>
+      <td class="p-4 text-center">
+        <div class="flex justify-center gap-2">
+          <button onclick="editRec('${r.id}')" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition flex items-center justify-center shadow-sm">
+            <i class="fas fa-edit text-xs"></i>
+          </button>
+          <button onclick="delRec('${r.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition flex items-center justify-center shadow-sm">
+            <i class="fas fa-trash-alt text-xs"></i>
+          </button>
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -2138,6 +2634,8 @@ function onProjectChange() {
     if (p.staff) {
       document.getElementById('r-staff').value = p.staff;
     }
+
+    autoFillPrice();
   }
 }
 
@@ -2149,8 +2647,11 @@ function editRec(id) {
   document.getElementById('r-date').value = r.date;
   document.getElementById('r-client').value = r.client;
   syncStaffDropdown();
-  document.getElementById('r-staff').value = r.staff || '';
-  document.getElementById('r-site').value = r.site;
+	  document.getElementById('r-staff').value = r.staff || '';
+	  document.getElementById('r-worker-price').value = r.workerPrice || '';
+		  document.getElementById('r-worker-paid').checked = r.workerPaid || false;
+		  document.getElementById('r-is-completed').checked = r.isCompleted || false;
+		  document.getElementById('r-site').value = r.site;
   document.getElementById('r-type').value = r.type;
   document.getElementById('r-qty').value = r.qty;
   document.getElementById('r-price').value = r.price;
@@ -2179,21 +2680,27 @@ function saveRecord(keepOpen) {
   if (!document.getElementById('r-site').value) return showToast('請輸入工地名稱', 'error');
   if (!document.getElementById('r-client').value) return showToast('請選擇客戶', 'error');
 
+  const wp = parseFloat(document.getElementById('r-worker-price').value) || 0;
   const rec = {
     id,
     date: document.getElementById('r-date').value,
     projectId: document.getElementById('r-project').value,
     client: document.getElementById('r-client').value,
     staff: document.getElementById('r-staff').value,
+    worker: document.getElementById('r-worker').value,
+    workerPrice: wp,
+    workerTotal: Math.round(q * wp),
     site: document.getElementById('r-site').value.trim(),
     type: document.getElementById('r-type').value,
     qty: q,
     price: p,
     total: Math.round(q * p),
     prepaid: parseFloat(document.getElementById('r-prepaid').value) || 0,
-    invoiced: document.getElementById('r-invoiced').checked,
-    paid: document.getElementById('r-paid').checked,
-    note: document.getElementById('r-note').value.trim(),
+	    invoiced: document.getElementById('r-invoiced').checked,
+	    paid: document.getElementById('r-paid').checked,
+		    workerPaid: document.getElementById('r-worker-paid').checked,
+		    isCompleted: document.getElementById('r-is-completed').checked,
+		    note: document.getElementById('r-note').value.trim(),
     extraStay: parseFloat(document.getElementById('r-extra-stay').value) || 0,
     extraOil: parseFloat(document.getElementById('r-extra-oil').value) || 0,
     extraOther: parseFloat(document.getElementById('r-extra-other').value) || 0,
@@ -2211,9 +2718,11 @@ function saveRecord(keepOpen) {
     document.getElementById('r-qty').value = '';
     document.getElementById('r-note').value = '';
     document.getElementById('r-prepaid').value = '';
-    document.getElementById('r-invoiced').checked = false;
-    document.getElementById('r-paid').checked = false;
-    document.getElementById('r-extra-stay').value = '';
+	    document.getElementById('r-invoiced').checked = false;
+	    document.getElementById('r-paid').checked = false;
+		    document.getElementById('r-worker-paid').checked = false;
+		    document.getElementById('r-is-completed').checked = false;
+		    document.getElementById('r-extra-stay').value = '';
     document.getElementById('r-extra-oil').value = '';
     document.getElementById('r-extra-other').value = '';
     document.getElementById('r-extra-note').value = '';
@@ -2453,6 +2962,22 @@ function updateClientSelects() {
   const rProject = document.getElementById('r-project');
   if (rProject) rProject.innerHTML = '<option value="">-- 無專案 --</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
 
+	  const wHtml = workers.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
+	  document.getElementById('filter-worker').innerHTML = '<option value="">所有師傅</option>' + wHtml;
+	  document.getElementById('r-worker').innerHTML = '<option value="">未指定</option>' + wHtml;
+	  
+	  // 監聽師傅選擇，自動帶入預設工資
+	  const rWorker = document.getElementById('r-worker');
+	  if (rWorker) {
+	    rWorker.onchange = () => {
+	      const wName = rWorker.value;
+	      const worker = workers.find(w => w.name === wName);
+	      if (worker && worker.defaultPrice) {
+	        document.getElementById('r-worker-price').value = worker.defaultPrice;
+	      }
+	    };
+	  }
+
   syncStaffDropdown();
   updateFilterStaffs();
 }
@@ -2472,12 +2997,48 @@ function syncStaffDropdown() {
 function autoFillPrice() {
   const clientName = document.getElementById('r-client').value;
   const typeName = document.getElementById('r-type').value;
-  if (!clientName || !typeName) return;
+  const projectId = document.getElementById('r-project').value;
+  if (!typeName) return;
 
-  const client = clients.find(c => c.name === clientName);
-  if (client && client.prices && client.prices[typeName] !== undefined) {
-    document.getElementById('r-price').value = client.prices[typeName];
-    calcModalTotal();
+  // 優先權：專案專屬單價 > 客戶專屬單價
+  if (projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (project && project.prices) {
+      const pObj = project.prices.find(p => p.type === typeName);
+      if (pObj && pObj.price) {
+        document.getElementById('r-price').value = pObj.price;
+        calcModalTotal();
+        autoFillWorkerPrice(); // 同步嘗試填入師傅單價
+        return;
+      }
+    }
+  }
+
+  if (clientName) {
+    const client = clients.find(c => c.name === clientName);
+    if (client && client.prices && client.prices[typeName] !== undefined) {
+      document.getElementById('r-price').value = client.prices[typeName];
+      calcModalTotal();
+    }
+  }
+  autoFillWorkerPrice(); // 同步嘗試填入師傅單價
+}
+
+function autoFillWorkerPrice() {
+  const workerName = document.getElementById('r-worker').value;
+  const typeName = document.getElementById('r-type').value;
+  if (!workerName || !typeName) return;
+
+  const worker = workers.find(w => w.name === workerName);
+  if (worker) {
+    // 師傅專屬工項單價
+    if (worker.prices) {
+      const pObj = worker.prices.find(p => p.type === typeName);
+      if (pObj && pObj.price) {
+        document.getElementById('r-worker-price').value = pObj.price;
+        return;
+      }
+    }
   }
 }
 
@@ -2529,7 +3090,18 @@ function togglePrintMenu() {
 
 function executePrint(mode) {
   document.getElementById('print-dropdown').classList.add('hidden');
-  const filtered = getFilteredRecords();
+  const filtered = getFilteredRecords().sort((a, b) => {
+    // 1. 工地排序 (優先)
+    if (a.site !== b.site) return a.site.localeCompare(b.site, 'zh-TW');
+
+    // 2. 專案排序
+    const pA = projects.find(p => p.id === a.projectId)?.name || "";
+    const pB = projects.find(p => p.id === b.projectId)?.name || "";
+    if (pA !== pB) return pA.localeCompare(pB, 'zh-TW');
+    
+    // 3. 日期排序
+    return new Date(a.date) - new Date(b.date);
+  });
   const selectedClientName = document.getElementById('filter-client').value;
   let clientName = selectedClientName || '所有客戶';
   const staffName = document.getElementById('filter-staff').value;
@@ -2562,6 +3134,22 @@ function executePrint(mode) {
     };
     
     renderInvoiceModal(invoiceData);
+    return;
+  }
+
+  if (mode === 'worker') {
+    const selectedWorker = document.getElementById('filter-worker').value;
+    if (!selectedWorker) return showToast('請先選擇特定師傅再產生對帳單', 'error');
+    
+    const workerInfo = workers.find(w => w.name === selectedWorker) || { name: selectedWorker };
+    
+    const workerData = {
+      workRange: `${startD} ～ ${endD}`,
+      workerInfo: workerInfo,
+      items: filtered
+    };
+    
+    renderWorkerInvoiceModal(workerData);
     return;
   }
 
@@ -2609,8 +3197,10 @@ function executePrint(mode) {
         let displayVal = '';
         if (isDotWorker) displayVal = `${r.qty} 工`;
         else if (isOil) displayVal = `${r.qty} 式`;
-        else if (!isStats) displayVal = `1 式`;
-        else { displayVal = `${r.qty} ${unit}`; grandTotalQty += r.qty; }
+        else { 
+          displayVal = `${r.qty} ${unit}`; 
+          if (isStats) grandTotalQty += r.qty; 
+        }
         
         html += `<tr><td>${r.date}</td><td style="text-align:left">${r.type}${r.note ? ' (' + r.note + ')' : ''}</td><td>${displayVal}</td></tr>`;
         if (!siteStats[r.type]) siteStats[r.type] = { qty: 0, amt: 0, unit: isDotWorker ? '工' : unit, isStats: isStats, isDotWorker: isDotWorker };
@@ -2633,7 +3223,7 @@ function executePrint(mode) {
         const s = siteStats[type];
         if (s.isDotWorker) statStrings.push(`${type}：${s.qty.toFixed(2)} 工`);
         else if (type.includes('油資') || type.includes('郵資')) statStrings.push(`${type}：${s.qty.toFixed(2)} 式`);
-        else if (!s.isStats) statStrings.push(`${type}：$${s.amt.toLocaleString()}`);
+        else if (!s.isStats) statStrings.push(`${type}：${s.qty.toFixed(2)} ${s.unit} (不計入總量)`);
         else statStrings.push(`${type}：${s.qty.toFixed(2)} ${s.unit}`);
       }
       if (siteExtraStay > 0) statStrings.push(`住宿：$${siteExtraStay.toLocaleString()}`);
@@ -2643,9 +3233,13 @@ function executePrint(mode) {
       html += `<tr class="subtotal-row"><td colspan="3" style="text-align:left;padding-left:20px">● 工地小計 >> ${statStrings.join(' ｜ ')}</td></tr>`;
     }
     tbody.innerHTML = html;
-    tfoot.innerHTML = `總計施工數量：${grandTotalQty.toFixed(2)} M`;
+    tfoot.innerHTML = ''; // 移除工程數量表總計
   } else {
-    thead.innerHTML = `<tr><th width="12%">日期</th><th width="20%">項目</th><th width="12%">數量</th><th width="12%">單價</th><th width="12%">金額</th><th width="32%">備註</th></tr>`;
+    const isWorkerMode = (mode === 'worker');
+    const priceLabel = isWorkerMode ? '工資單價' : '單價';
+    const totalLabel = isWorkerMode ? '工資小計' : '金額';
+    
+    thead.innerHTML = `<tr><th width="12%">日期</th><th width="20%">項目</th><th width="12%">數量</th><th width="12%">${priceLabel}</th><th width="12%">${totalLabel}</th><th width="32%">備註</th></tr>`;
     for (const site in grouped) {
       html += `<tr><td colspan="6" class="site-group-header">${site.includes(' - ') ? '專案工地' : '工地'}：${site}</td></tr>`;
       let siteAmt = 0;
@@ -2655,15 +3249,18 @@ function executePrint(mode) {
         const typeObj = workTypes.find(t => (typeof t === 'string' ? t : t.name) === r.type);
         const unit = typeObj ? (typeObj.unit || 'M') : 'M';
         
+        const displayPrice = isWorkerMode ? (r.workerPrice || 0) : (r.price || 0);
+        const displayTotal = isWorkerMode ? (r.workerTotal || (r.qty * displayPrice)) : (r.total || 0);
+        
         html += `<tr>
           <td>${r.date}</td>
           <td style="text-align:left">${r.type}</td>
           <td>${r.qty} ${unit}</td>
-          <td>$${r.price.toLocaleString()}</td>
-          <td>$${r.total.toLocaleString()}</td>
+          <td>$${displayPrice.toLocaleString()}</td>
+          <td>$${displayTotal.toLocaleString()}</td>
           <td style="text-align:left">${r.note || ''}</td>
         </tr>`;
-        siteAmt += r.total; grandTotalAmt += r.total;
+        siteAmt += displayTotal; grandTotalAmt += displayTotal;
         
         siteExtraStay += (r.extraStay || 0);
         siteExtraOil += (r.extraOil || 0);
@@ -2693,32 +3290,85 @@ function executePrint(mode) {
   window.print();
 }
 
-function renderInvoiceModal(data) {
+function renderInvoiceModal(data, isReprint = false) {
   const { workRange, clientInfo, items, extraStay = 0, extraOil = 0, extraOther = 0 } = data;
   document.getElementById('print-area').innerHTML = ''; // 清空報表列印區
   const now = new Date();
-  const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
-  const invNo = `INV-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}`;
+  const dateStr = data.dateStr || `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+  const invNo = data.invNo || `INV-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}`;
   
   let taxBase = 0;
-  const siteName = items.length > 0 ? items[0].site : '--';
   
-  const tableRows = items.map((r, index) => {
-    taxBase += r.total;
-    const typeObj = workTypes.find(t => (typeof t === 'string' ? t : t.name) === r.type);
-    const unit = typeObj ? (typeObj.unit || 'M') : 'M';
-    const noteText = r.note ? ` <span class="text-[12px] block mt-1">${r.note}</span>` : '';
-    return `
-      <tr class="hover:bg-slate-50">
-        <td class="text-center font-bold">${index + 1}</td>
-        <td class="text-center font-medium">${r.date}</td>
-        <td class="font-bold text-[15px]">${r.type}${noteText}</td>
-        <td class="text-right font-bold text-[15px]">${r.qty.toLocaleString()} ${unit}</td>
-        <td class="text-right">$${r.price.toLocaleString()}</td>
-        <td class="text-right font-black text-[16px]">$${r.total.toLocaleString()}</td>
+  // 判斷工地名稱：如果有多個工地，顯示「多個工地（詳見明細）」
+  const uniqueSites = [...new Set(items.map(r => r.site))];
+  const uniqueProjects = [...new Set(items.map(r => r.projectId).filter(id => id))];
+  let siteName = '--';
+  if (uniqueProjects.length === 1) {
+    const pObj = projects.find(p => p.id === uniqueProjects[0]);
+    siteName = pObj ? pObj.name : '--';
+  } else if (uniqueSites.length === 1) {
+    siteName = items[0].site;
+  } else {
+    siteName = "多個工地/專案（詳見明細）";
+  }
+
+  // 按分組鍵分組 (優先使用專案名稱，若無則使用工地名稱)
+  const groupedData = items.reduce((acc, r) => {
+    const pObj = projects.find(p => p.id === r.projectId);
+    const groupKey = pObj ? pObj.name : r.site;
+    if (!acc[groupKey]) acc[groupKey] = [];
+    acc[groupKey].push(r);
+    return acc;
+  }, {});
+
+  let tableRows = '';
+  let globalIndex = 1;
+  
+  for (const groupKey in groupedData) {
+    const groupItems = groupedData[groupKey];
+    let groupSubtotal = 0;
+    
+    // 插入分組標頭 (專案或工地)
+    const isProject = projects.some(p => p.name === groupKey);
+    tableRows += `
+      <tr class="bg-slate-50/80">
+        <td colspan="6" class="p-2 font-black text-indigo-700 border-y border-slate-200">
+          <i class="fas ${isProject ? 'fa-project-diagram' : 'fa-map-marker-alt'} mr-2"></i>${isProject ? '專案' : '工地'}：${groupKey}
+        </td>
       </tr>
     `;
-  }).join('');
+    
+    groupItems.forEach(r => {
+      taxBase += r.total;
+      groupSubtotal += r.total;
+      const typeObj = workTypes.find(t => (typeof t === 'string' ? t : t.name) === r.type);
+      const unit = typeObj ? (typeObj.unit || 'M') : 'M';
+      const noteText = r.note ? ` <span class="text-[12px] block mt-1">${r.note}</span>` : '';
+      
+      // 如果是專案分組，在項目中顯示具體施作位置(工地)
+      const pObj = projects.find(p => p.id === r.projectId);
+      const siteDetail = pObj ? `<span class="text-[11px] text-slate-500 block mb-0.5"><i class="fas fa-location-dot mr-1 text-[9px]"></i>${r.site}</span>` : '';
+      
+      tableRows += `
+        <tr class="hover:bg-slate-50">
+          <td class="text-center font-bold">${globalIndex++}</td>
+          <td class="text-center font-medium">${r.date}</td>
+          <td class="font-bold text-[15px]">${siteDetail}${r.type}${noteText}</td>
+          <td class="text-right font-bold text-[15px]">${r.qty.toLocaleString()} ${unit}</td>
+          <td class="text-right">$${r.price.toLocaleString()}</td>
+          <td class="text-right font-black text-[16px]">$${r.total.toLocaleString()}</td>
+        </tr>
+      `;
+    });
+    
+    // 插入分組小計
+    tableRows += `
+      <tr class="border-b-2 border-slate-100">
+        <td colspan="5" class="text-right p-2 text-xs font-bold text-slate-500">【${groupKey}】小計：</td>
+        <td class="text-right p-2 font-bold text-indigo-600">$${groupSubtotal.toLocaleString()}</td>
+      </tr>
+    `;
+  }
 
   // 處理雜支顯示
   let extraRows = '';
@@ -2731,6 +3381,29 @@ function renderInvoiceModal(data) {
   const totalBase = taxBase + nonTaxTotal;
   const tax = Math.round(taxBase * 0.05);
   const grandTotal = totalBase + tax;
+
+  // 如果不是重新列印，則保存紀錄
+  if (!isReprint) {
+    const historyItem = {
+      invNo,
+      dateStr,
+      createDate: new Date().toLocaleString(),
+      workRange,
+      clientInfo,
+      items,
+      extraStay,
+      extraOil,
+      extraOther,
+      taxBase,
+      tax,
+      nonTaxTotal,
+      grandTotal,
+      siteName
+    };
+    invoiceHistory.push(historyItem);
+    localStorage.setItem('yuzheng_invoice_history', JSON.stringify(invoiceHistory));
+    save(); // 觸發雲端同步
+  }
 
   const invoiceHtml = `
     <div class="flex justify-between items-start border-b-4 border-black pb-4 mb-6">
@@ -2831,6 +3504,430 @@ function renderInvoiceModal(data) {
   document.getElementById('invoice-modal').classList.remove('hidden');
 }
 
+function renderWorkerInvoiceModal(data) {
+  const { workRange, workerInfo, items } = data;
+  document.getElementById('print-area').innerHTML = '';
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+  
+  let grandTotal = 0;
+  const tableRows = items.map((r, index) => {
+    const wPrice = r.workerPrice || 0;
+    const wTotal = r.workerTotal || (r.qty * wPrice);
+    grandTotal += wTotal;
+    const typeObj = workTypes.find(t => (typeof t === 'string' ? t : t.name) === r.type);
+    const unit = typeObj ? (typeObj.unit || 'M') : 'M';
+    
+    const pObj = projects.find(p => p.id === r.projectId);
+    const projectTag = pObj ? `<span class="text-[10px] bg-slate-100 text-slate-500 px-1 rounded mr-1">${pObj.name}</span>` : '';
+    
+    return `
+      <tr class="hover:bg-slate-50">
+        <td class="text-center font-bold">${index + 1}</td>
+        <td class="text-center font-medium">${r.date}</td>
+        <td class="font-bold text-[15px]">${projectTag}${r.site}</td>
+        <td class="font-bold text-[15px]">${r.type}</td>
+        <td class="text-right font-bold text-[15px]">${r.qty.toLocaleString()} ${unit}</td>
+        <td class="text-right">$${wPrice.toLocaleString()}</td>
+        <td class="text-right font-black text-[16px]">$${wTotal.toLocaleString()}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const invoiceHtml = `
+    <div class="flex justify-between items-start border-b-4 border-black pb-4 mb-6">
+        <div>
+	            <h1 class="text-4xl font-black tracking-[0.4em] mb-2">師傅對帳單</h1>
+            <div class="inline-block bg-orange-100 px-3 py-1 rounded-full text-sm font-bold text-orange-700">
+                對帳區間：<span>${workRange || '--'}</span>
+            </div>
+        </div>
+        <div class="text-right">
+            <div class="text-xs font-bold">對帳日期</div>
+            <div class="text-lg font-black">${dateStr}</div>
+        </div>
+    </div>
+
+    <div class="mb-8">
+        <div class="space-y-2 text-left">
+            <div class="font-black text-2xl">師傅姓名：${workerInfo.name}</div>
+            <div class="text-[14px] space-y-1">
+                <p>聯絡電話：<span>${workerInfo.phone || '--'}</span></p>
+                <p>備註說明：<span>${workerInfo.note || '--'}</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-grow-area">
+        <table class="w-full invoice-table text-left">
+            <thead>
+                <tr class="text-[14px] font-bold">
+                    <th class="w-12 text-center">項次</th>
+                    <th class="w-32 text-center">施工日期</th>
+                    <th>工地名稱</th>
+                    <th>施作項目</th>
+                    <th class="w-20 text-right">數量</th>
+                    <th class="w-24 text-right">單價</th>
+                    <th class="w-32 text-right">小計</th>
+                </tr>
+            </thead>
+            <tbody class="text-[14px]">
+                ${tableRows}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex justify-end mt-6 mb-8">
+        <div class="w-64 space-y-2 text-right border-t-2 border-black pt-4">
+            <div class="flex justify-between text-2xl font-black border-t-4 border-black pt-2 mt-2">
+                <span>結帳總計</span>
+                <span>$${grandTotal.toLocaleString()}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-5 gap-8 border-t border-black pt-8">
+        <div class="col-span-3 text-left">
+            <h4 class="font-black mb-3 flex items-center text-sm">
+                <i class="fas fa-info-circle mr-2"></i>結帳說明
+            </h4>
+            <div class="bg-slate-50 p-4 rounded-lg border border-black text-[13px] space-y-1">
+                <p>1. 本單據僅供內部對帳使用。</p>
+                <p>2. 請師傅核對施作項目與數量是否正確。</p>
+            </div>
+        </div>
+        <div class="col-span-2 flex flex-col items-end text-right">
+            <div class="space-y-1.5">
+                <img src="yuzheng_logo_v2_skirting.png" alt="昱正工程行 Logo" class="w-48 h-auto mb-0 ml-auto">
+                <div class="text-2xl font-black">昱正工程行</div>
+            </div>
+        </div>
+    </div>
+  `;
+  
+  document.getElementById('invoice-content').innerHTML = invoiceHtml;
+  document.getElementById('invoice-print-area').innerHTML = invoiceHtml;
+  document.getElementById('invoice-modal').classList.remove('hidden');
+}
+
+// 師傅施工紀錄邏輯
+function updateWorkerRecordSelect() {
+  const sel = document.getElementById('wr-filter-worker');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">-- 全部師傅 --</option>' + 
+    workers.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
+  sel.value = current;
+}
+
+function resetWorkerRecordFilter() {
+  document.getElementById('wr-filter-worker').value = '';
+  document.getElementById('wr-filter-status').value = '';
+  document.getElementById('wr-filter-start').value = '';
+  document.getElementById('wr-filter-end').value = '';
+  renderWorkerRecords();
+}
+
+function toggleSelectAllWorkerRecords() {
+  const isChecked = document.getElementById('wr-select-all').checked;
+  document.querySelectorAll('.wr-row-checkbox').forEach(cb => cb.checked = isChecked);
+  updateWorkerBatchActionsVisibility();
+}
+
+function updateWorkerBatchActionsVisibility() {
+  const checkedCount = document.querySelectorAll('.wr-row-checkbox:checked').length;
+  const actions = document.getElementById('wr-batch-actions');
+  if (checkedCount > 0) {
+    actions.classList.remove('hidden');
+  } else {
+    actions.classList.add('hidden');
+  }
+}
+
+function batchDeleteWorkerRecords() {
+  const selectedIds = Array.from(document.querySelectorAll('.wr-row-checkbox:checked')).map(cb => cb.value);
+  if (selectedIds.length === 0) return;
+  if (!confirm(`確定要移除這 ${selectedIds.length} 筆紀錄的師傅施工資訊嗎？`)) return;
+  
+  records.forEach(r => {
+    if (selectedIds.includes(r.id)) {
+      r.worker = '';
+      r.workerPrice = 0;
+      r.workerTotal = 0;
+      r.workerPaid = false;
+    }
+  });
+  save();
+  renderWorkerRecords();
+  showToast(`已移除 ${selectedIds.length} 筆紀錄的師傅資訊`);
+}
+
+function batchMarkWorkerPaid() {
+  const selectedIds = Array.from(document.querySelectorAll('.wr-row-checkbox:checked')).map(cb => cb.value);
+  if (selectedIds.length === 0) return;
+  
+  records.forEach(r => {
+    if (selectedIds.includes(r.id)) {
+      r.workerPaid = true;
+    }
+  });
+  save();
+  renderWorkerRecords();
+  showToast(`已將 ${selectedIds.length} 筆紀錄標記為工資已付`);
+}
+
+function openWorkerRecordEditModal(id) {
+  const r = records.find(rec => rec.id === id);
+  if (!r) return;
+  
+  document.getElementById('wre-id').value = r.id;
+  document.getElementById('wre-qty').value = r.qty || 0;
+  document.getElementById('wre-price').value = r.workerPrice || 0;
+  document.getElementById('wre-paid').checked = r.workerPaid || false;
+  document.getElementById('wre-completed').checked = r.isCompleted || false;
+  
+  document.getElementById('worker-record-edit-modal').classList.remove('hidden');
+}
+
+function saveWorkerRecordEdit() {
+  const id = document.getElementById('wre-id').value;
+  const r = records.find(rec => rec.id === id);
+  if (!r) return;
+  
+  r.qty = parseFloat(document.getElementById('wre-qty').value) || 0;
+  r.workerPrice = parseFloat(document.getElementById('wre-price').value) || 0;
+  r.workerPaid = document.getElementById('wre-paid').checked;
+  r.isCompleted = document.getElementById('wre-completed').checked;
+  
+  // 同步更新金額
+  r.total = Math.round(r.qty * (r.price || 0));
+  r.workerTotal = Math.round(r.qty * r.workerPrice);
+  
+  save();
+  closeModal('worker-record-edit-modal');
+  renderWorkerRecords();
+  renderRecords(); // 同步更新工程紀錄列表
+  showToast('施工紀錄已更新');
+}
+
+function deleteWorkerRecord(id) {
+  if (!confirm('確定要移除此筆紀錄的師傅施工資訊嗎？')) return;
+  const r = records.find(rec => rec.id === id);
+  if (r) {
+    r.worker = '';
+    r.workerPrice = 0;
+    r.workerTotal = 0;
+    r.workerPaid = false;
+    save();
+    renderWorkerRecords();
+    showToast('師傅施工資訊已移除');
+  }
+}
+
+function renderWorkerRecords() {
+  const workerName = document.getElementById('wr-filter-worker').value;
+  const statusFilter = document.getElementById('wr-filter-status').value;
+  const startD = document.getElementById('wr-filter-start').value;
+  const endD = document.getElementById('wr-filter-end').value;
+  
+  const filtered = records.filter(r => {
+    const matchWorker = (r.worker);
+    const matchName = (!workerName || r.worker === workerName);
+    const matchStatus = (!statusFilter || (statusFilter === 'paid' ? r.workerPaid : !r.workerPaid));
+    const matchStart = (!startD || r.date >= startD);
+    const matchEnd = (!endD || r.date <= endD);
+    return matchWorker && matchName && matchStatus && matchStart && matchEnd;
+  }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const tbody = document.getElementById('worker-records-list');
+  const empty = document.getElementById('worker-records-empty');
+  
+  let totalQty = 0;
+  let totalAmount = 0;
+
+  document.getElementById('wr-select-all').checked = false;
+  updateWorkerBatchActionsVisibility();
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    tbody.innerHTML = filtered.map(r => {
+      totalQty += (r.qty || 0);
+      totalAmount += (r.workerTotal || 0);
+      
+      const statusBadge = r.workerPaid 
+        ? '<span class="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">工資已付</span>'
+        : '<span class="px-2 py-1 rounded-full text-[10px] font-bold bg-slate-50 text-slate-400 border border-slate-100">工資未領</span>';
+
+      const pObj = projects.find(p => p.id === r.projectId);
+      const siteDisplay = pObj ? `<div class="text-[10px] text-indigo-500 font-bold mb-0.5">${pObj.name}</div>${r.site}` : r.site;
+
+      return `
+        <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition">
+          <td class="p-4">
+            <input type="checkbox" class="wr-row-checkbox w-4 h-4 accent-orange-600" value="${r.id}" onchange="updateWorkerBatchActionsVisibility()">
+          </td>
+          <td class="p-4 text-sm font-medium text-slate-600">${r.date}</td>
+          <td class="p-4 text-sm font-bold text-slate-700">${siteDisplay}</td>
+          <td class="p-4 text-sm text-slate-600">${r.type}</td>
+          <td class="p-4 text-sm font-bold text-slate-700">${r.qty}</td>
+          <td class="p-4 text-sm text-slate-500">$${(r.workerPrice || 0).toLocaleString()}</td>
+          <td class="p-4 text-sm font-black text-orange-600">$${(r.workerTotal || 0).toLocaleString()}</td>
+          <td class="p-4">${statusBadge}</td>
+          <td class="p-4 text-center">
+            <div class="flex justify-center gap-2">
+              <button onclick="openWorkerRecordEditModal('${r.id}')" class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white transition flex items-center justify-center shadow-sm" title="編輯">
+                <i class="fas fa-edit text-xs"></i>
+              </button>
+              <button onclick="deleteWorkerRecord('${r.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition flex items-center justify-center shadow-sm" title="刪除">
+                <i class="fas fa-trash-alt text-xs"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('wr-stat-count').textContent = filtered.length;
+  document.getElementById('wr-stat-qty').textContent = totalQty.toFixed(2);
+  document.getElementById('wr-stat-amount').textContent = '$' + totalAmount.toLocaleString();
+}
+
+// 師傅管理邏輯
+function renderWorkerList() {
+  const list = document.getElementById('worker-list-table');
+  const empty = document.getElementById('worker-empty');
+  if (!list) return;
+  
+  if (workers.length === 0) {
+    list.innerHTML = '';
+    if (empty) empty.classList.remove('hidden');
+    return;
+  }
+  
+  if (empty) empty.classList.add('hidden');
+  list.innerHTML = workers.map((w, idx) => `
+    <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition">
+      <td class="p-4 font-bold text-slate-700">${w.name}</td>
+      <td class="p-4 text-slate-500 text-sm">${w.phone || '—'}</td>
+      <td class="p-4 text-slate-500 text-sm">${w.note || '—'}</td>
+      <td class="p-4 text-center">
+        <button onclick="openWorkerModal(${idx})" class="text-indigo-500 hover:text-indigo-700 mr-3 transition"><i class="fas fa-edit"></i></button>
+        <button onclick="delWorker(${idx})" class="text-slate-300 hover:text-rose-500 transition"><i class="fas fa-trash-alt"></i></button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function toggleWorkerCompanyFields() {
+  const hasCompany = document.getElementById('w-has-company').checked;
+  const fields = document.getElementById('worker-company-fields');
+  if (hasCompany) {
+    fields.classList.remove('hidden');
+  } else {
+    fields.classList.add('hidden');
+  }
+}
+
+function openWorkerModal(idx = null) {
+  document.getElementById('w-edit-idx').value = idx !== null ? idx : '';
+  document.getElementById('worker-modal-title').textContent = idx !== null ? '編輯師傅' : '新增師傅';
+  if (idx !== null) {
+    const w = workers[idx];
+    document.getElementById('w-name').value = w.name;
+    document.getElementById('w-phone').value = w.phone || '';
+    document.getElementById('w-has-company').checked = w.hasCompany || false;
+    document.getElementById('w-company-name').value = w.companyName || '';
+    document.getElementById('w-company-tax').value = w.companyTax || '';
+    document.getElementById('w-note').value = w.note || '';
+    renderWorkerPriceRows(w.prices || []);
+  } else {
+    document.getElementById('w-name').value = '';
+    document.getElementById('w-phone').value = '';
+    document.getElementById('w-has-company').checked = false;
+    document.getElementById('w-company-name').value = '';
+    document.getElementById('w-company-tax').value = '';
+    document.getElementById('w-note').value = '';
+    renderWorkerPriceRows([]);
+  }
+  toggleWorkerCompanyFields();
+  document.getElementById('worker-modal').classList.remove('hidden');
+}
+
+function addWorkerPriceRow(type = '', price = '') {
+  const container = document.getElementById('w-price-list');
+  const div = document.createElement('div');
+  div.className = 'flex gap-2 items-center';
+  div.innerHTML = `
+    <select class="w-type-select flex-1 border border-slate-200 p-2 rounded-lg text-xs">
+      <option value="">-- 選擇項目 --</option>
+      ${workTypes.map(t => {
+        const name = typeof t === 'string' ? t : t.name;
+        return `<option value="${name}" ${name === type ? 'selected' : ''}>${name}</option>`;
+      }).join('')}
+    </select>
+    <input type="number" class="w-price-input w-24 border border-slate-200 p-2 rounded-lg text-xs" placeholder="單價" value="${price}">
+    <button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-rose-500"><i class="fas fa-times-circle"></i></button>
+  `;
+  container.appendChild(div);
+}
+
+function renderWorkerPriceRows(prices = []) {
+  const container = document.getElementById('w-price-list');
+  container.innerHTML = '';
+  if (prices.length === 0) {
+    addWorkerPriceRow();
+  } else {
+    prices.forEach(p => addWorkerPriceRow(p.type, p.price));
+  }
+}
+
+function saveWorker() {
+  const name = document.getElementById('w-name').value.trim();
+  if (!name) return showToast('請輸入師傅姓名', 'error');
+  const idx = document.getElementById('w-edit-idx').value;
+  
+  const prices = [];
+  document.querySelectorAll('#w-price-list > div').forEach(div => {
+    const type = div.querySelector('.w-type-select').value;
+    const price = parseFloat(div.querySelector('.w-price-input').value) || 0;
+    if (type) prices.push({ type, price });
+  });
+
+  const hasCompany = document.getElementById('w-has-company').checked;
+  const newWorker = {
+    name,
+    phone: document.getElementById('w-phone').value.trim(),
+    hasCompany,
+    companyName: hasCompany ? document.getElementById('w-company-name').value.trim() : '',
+    companyTax: hasCompany ? document.getElementById('w-company-tax').value.trim() : '',
+    prices,
+    note: document.getElementById('w-note').value.trim()
+  };
+  if (idx !== '') {
+    workers[parseInt(idx)] = newWorker;
+  } else {
+    workers.push(newWorker);
+  }
+  save();
+  updateClientSelects();
+  renderWorkerList();
+  closeModal('worker-modal');
+  showToast(idx !== '' ? '師傅資料已更新' : '師傅已新增');
+}
+
+function delWorker(idx) {
+  if (!confirm(`確定刪除師傅「${workers[idx].name}」？`)) return;
+  workers.splice(idx, 1);
+  save();
+  updateClientSelects();
+  renderWorkerList();
+  showToast('師傅已刪除', 'info');
+}
+
 function printInvoice() {
   window.print();
 }
@@ -2860,7 +3957,7 @@ function exportToExcel() {
 // JSON 備份與還原
 // ============================================================
 function exportJSON(isAuto = false) {
-  const data = { records, clients, projects, workTypes, quotations, exportedAt: new Date().toISOString(), version: '7.2' };
+  const data = { records, clients, projects, workTypes, workers, quotations, exportedAt: new Date().toISOString(), version: '7.2' };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2893,6 +3990,7 @@ async function importJSON(event) {
     clients = data.clients;
     if (data.projects) projects = data.projects;
     if (data.workTypes) workTypes = data.workTypes;
+    if (data.workers) workers = data.workers;
     if (data.quotations) {
       quotations = data.quotations;
       localStorage.setItem('yuzheng_quotations', JSON.stringify(quotations));
@@ -2916,6 +4014,7 @@ function clearAllData() {
   if (!confirm('確定要清除所有工程紀錄與客戶資料？此操作無法復原！')) return;
       records = [];
   clients = [];
+  workers = [];
   updateClientSelects();
   renderRecords();
   updateSettingsInfo();
@@ -2976,16 +4075,18 @@ window.onload = async function () {
   try {
     const response = await fetch(cloudUrl);
     const data = await response.json();
-    if(data.records && Array.isArray(data.records)) { 
-        records = data.records; 
-        clients = data.clients || []; 
-        if(data.projects) projects = data.projects;
-        if(data.workTypes) workTypes = data.workTypes;
-        if(data.quotations) { quotations = data.quotations; localStorage.setItem('yuzheng_quotations', JSON.stringify(quotations)); }
-        saveLocal(); 
-        updateCloudStatusUI('online'); 
-        showToast("已從雲端同步最新資料", "success");
-    } else { 
+	    if(data.records && Array.isArray(data.records)) { 
+	        records = data.records; 
+	        clients = data.clients || []; 
+	        if(data.projects) projects = data.projects;
+	        if(data.workTypes) workTypes = data.workTypes;
+	        if(data.workers) workers = data.workers;
+		        if(data.quotations) { quotations = data.quotations; localStorage.setItem('yuzheng_quotations', JSON.stringify(quotations)); }
+		        if(data.invoiceHistory) { invoiceHistory = data.invoiceHistory; localStorage.setItem('yuzheng_invoice_history', JSON.stringify(invoiceHistory)); }
+		        saveLocal(); 
+		        updateCloudStatusUI('online'); 
+		        showToast("已從雲端同步最新資料", "success");
+	    } else { 
         if (loadingText) loadingText.textContent = "雲端無資料，載入本地備份...";
         loadLocal(); 
         updateCloudStatusUI('offline'); 
