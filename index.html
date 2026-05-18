@@ -176,17 +176,15 @@
       <nav class="flex-1 px-4 py-6 space-y-3 overflow-y-auto">
         <button onclick="openRecordModal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-xl font-black shadow-lg transition flex items-center justify-center space-x-2">
           <i class="fas fa-plus"></i>
-          <span>新增紀錄</span>
+          <span>新增工程紀錄</span>
         </button>
-        
-        <button onclick="switchView('project-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
-          <i class="fas fa-project-diagram text-slate-700 group-hover:text-slate-900"></i>
-          <span class="font-bold text-sm">專案管理</span>
-        </button>
+
+        <!-- 主要功能 -->
+        <div class="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 py-3 mt-2 border-t border-[#6ecbc2]">主要功能</div>
 
         <button onclick="switchView('main')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
           <i class="fas fa-list-ul text-slate-700 group-hover:text-slate-900"></i>
-          <span class="font-bold text-sm">工程紀錄</span>
+          <span class="font-bold text-sm">工程總覽</span>
         </button>
 
         <button onclick="switchView('worker-records')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
@@ -195,9 +193,17 @@
         </button>
 
         <button onclick="switchView('invoice-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
-          <i class="fas fa-history text-slate-700 group-hover:text-slate-900"></i>
+          <i class="fas fa-file-invoice text-slate-700 group-hover:text-slate-900"></i>
           <span class="font-bold text-sm">請款紀錄</span>
         </button>
+
+        <button onclick="switchView('quotation')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-file-invoice-dollar text-slate-700 group-hover:text-slate-900"></i>
+          <span class="font-bold text-sm">報價系統</span>
+        </button>
+
+        <!-- 管理功能 -->
+        <div class="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 py-3 mt-2 border-t border-[#6ecbc2]">管理功能</div>
 
         <button onclick="switchView('client-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
           <i class="fas fa-users-cog text-slate-700 group-hover:text-slate-900"></i>
@@ -211,22 +217,20 @@
 
         <button onclick="switchView('type-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
           <i class="fas fa-list-check text-slate-700 group-hover:text-slate-900"></i>
-          <span class="font-bold text-sm">項目管理</span>
+          <span class="font-bold text-sm">工項管理</span>
+        </button>
+
+        <!-- 分析、設定、輸出 -->
+        <div class="text-xs font-bold text-slate-600 uppercase tracking-widest px-4 py-3 mt-2 border-t border-[#6ecbc2]">分析、設定、輸出</div>
+
+        <button onclick="switchView('stats')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
+          <i class="fas fa-chart-bar text-slate-700 group-hover:text-slate-900"></i>
+          <span class="font-bold text-sm">數據統計</span>
         </button>
 
         <button onclick="switchView('settings')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
           <i class="fas fa-cog text-slate-700 group-hover:text-slate-900"></i>
           <span class="font-bold text-sm">系統設定</span>
-        </button>
-
-        <button onclick="switchView('quotation')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
-          <i class="fas fa-file-invoice text-slate-700 group-hover:text-slate-900"></i>
-          <span class="font-bold text-sm">報價系統</span>
-        </button>
-
-        <button onclick="switchView('stats')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
-          <i class="fas fa-chart-bar text-slate-700 group-hover:text-slate-900"></i>
-          <span class="font-bold text-sm">數據統計</span>
         </button>
         
         <div class="pt-6">
@@ -235,7 +239,7 @@
             <div class="relative">
               <button onclick="togglePrintMenu()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition group shadow-lg">
                 <i class="fas fa-print"></i>
-                <span class="font-bold text-sm">列印報表</span>
+                <span class="font-bold text-sm">匯出報表</span>
                 <i class="fas fa-chevron-down text-[10px] ml-auto"></i>
               </button>
               <div id="print-dropdown" class="hidden absolute left-0 bottom-full mb-2 w-full bg-slate-800 rounded-xl shadow-2xl border border-slate-700 z-50 overflow-hidden">
@@ -290,62 +294,7 @@
     <section id="view-main" class="view-section view-active fade-in">
 
       <!-- 篩選區 -->
-      <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-5">
-        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">開始日期</label>
-            <input type="date" id="filter-start" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm">
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">結束日期</label>
-            <input type="date" id="filter-end" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm">
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">專案篩選</label>
-            <select id="filter-project" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="renderRecords()"></select>
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">選擇客戶</label>
-            <select id="filter-client" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="updateFilterStaffs()"></select>
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">工務人員</label>
-            <select id="filter-staff" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm"></select>
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">施工師傅</label>
-            <select id="filter-worker" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="renderRecords()"></select>
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">工地名稱</label>
-            <div class="search-wrap">
-              <input type="text" id="filter-site" placeholder="搜尋工地..."
-                class="w-full bg-slate-50 border border-slate-200 p-2.5 pr-8 rounded-xl text-sm" oninput="toggleClearBtn()">
-              <i id="clear-site-btn" class="fas fa-times-circle clear-btn hidden" onclick="clearSiteFilter()"></i>
-            </div>
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">款項狀態</label>
-            <select id="filter-status" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm">
-              <option value="">全部</option>
-              <option value="not_invoiced">未請款</option>
-              <option value="invoiced">已請款</option>
-              <option value="not_paid">未收款</option>
-              <option value="paid">已入帳</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100">
-          <button onclick="renderRecords()" class="bg-slate-800 text-white p-2.5 rounded-xl text-sm hover:bg-slate-700 font-bold transition">
-            <i class="fas fa-search mr-2"></i>查詢
-          </button>
-          <button onclick="resetFilters()" class="bg-slate-100 text-slate-600 p-2.5 rounded-xl text-sm hover:bg-slate-200 font-bold transition">
-            <i class="fas fa-undo mr-2"></i>重設
-          </button>
-        </div>
-      </section>
-
-      <!-- 統計卡片 -->
+      <!-- 統計卡片 - 最上方 -->
       <section class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
         <div class="bg-white p-4 rounded-2xl shadow-sm border-b-4 border-indigo-500">
           <div class="text-xs font-bold text-slate-400">施工總量(M)</div>
@@ -370,6 +319,87 @@
         <div class="bg-white p-4 rounded-2xl shadow-sm border-b-4 border-rose-500">
           <div class="text-xs font-bold text-slate-400">待收金額</div>
           <div class="text-xl font-black text-rose-600 mt-1">$<span id="stat-unpaid">0</span></div>
+        </div>
+      </section>
+
+      <!-- 篩選區 - 兩行佈局 -->
+      <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-5">
+        <!-- 第一行：開始日期、結束日期、專案篩選、選擇客戶、工務人員 -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">開始日期</label>
+            <div class="flex gap-2">
+              <input type="date" id="filter-start" class="flex-1 bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm">
+              <button onclick="setLastMonth()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-2.5 rounded-xl text-xs font-bold transition" title="上月">
+                <i class="fas fa-arrow-left mr-1"></i>上月
+              </button>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">結束日期</label>
+            <div class="flex gap-2">
+              <input type="date" id="filter-end" class="flex-1 bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm">
+              <button onclick="setToday()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-2.5 rounded-xl text-xs font-bold transition" title="本日">
+                <i class="fas fa-calendar-day mr-1"></i>本日
+              </button>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">專案篩選</label>
+            <select id="filter-project" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="renderRecords()"></select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">選擇客戶</label>
+            <select id="filter-client" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="updateFilterStaffs()"></select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">工務人員</label>
+            <select id="filter-staff" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm"></select>
+          </div>
+        </div>
+
+        <!-- 第二行：工地狀態、施工師傅、款項狀態、工地名稱 -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4 pt-4 border-t border-slate-100">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">工地狀態</label>
+            <select id="filter-site-status" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="renderRecords()">
+              <option value="">全部</option>
+              <option value="completed">已完工</option>
+              <option value="in-progress">施工中</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">施工師傅</label>
+            <select id="filter-worker" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="renderRecords()"></select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">款項狀態</label>
+            <select id="filter-status" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm">
+              <option value="">全部</option>
+              <option value="not_invoiced">未請款</option>
+              <option value="invoiced">已請款</option>
+              <option value="not_paid">未收款</option>
+              <option value="paid">已入帳</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">工地名稱</label>
+            <div class="search-wrap">
+              <input type="text" id="filter-site" placeholder="搜尋工地..."
+                class="w-full bg-slate-50 border border-slate-200 p-2.5 pr-8 rounded-xl text-sm" oninput="toggleClearBtn()">
+              <i id="clear-site-btn" class="fas fa-times-circle clear-btn hidden" onclick="clearSiteFilter()"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 查詢和重設按鈕 -->
+        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+          <button onclick="renderRecords()" class="bg-slate-800 text-white p-2.5 rounded-xl text-sm hover:bg-slate-700 font-bold transition">
+            <i class="fas fa-search mr-2"></i>查詢
+          </button>
+          <button onclick="resetFilters()" class="bg-slate-100 text-slate-600 p-2.5 rounded-xl text-sm hover:bg-slate-200 font-bold transition">
+            <i class="fas fa-undo mr-2"></i>重設
+          </button>
         </div>
       </section>
 
@@ -1821,11 +1851,29 @@ let monthlyChart = null;
 let clientChart = null;
 
 // ============================================================
+// 快速日期設定函數
+// ============================================================
+function setLastMonth() {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const lastDay = new Date(today.getFullYear(), today.getMonth(), 0);
+  document.getElementById('filter-start').value = firstDay.toISOString().slice(0, 10);
+  document.getElementById('filter-end').value = lastDay.toISOString().slice(0, 10);
+  renderRecords();
+}
+
+function setToday() {
+  const today = new Date();
+  document.getElementById('filter-end').value = today.toISOString().slice(0, 10);
+  renderRecords();
+}
+
+// ============================================================
 // 認證模組
 // ============================================================
 function checkPassword() {
   const input = document.getElementById('sys-password').value;
-  const storedPwd = localStorage.getItem('SYS_PWD_V7') || '888';
+  const storedPwd = '888';
   if (input === storedPwd) {
     document.getElementById('auth-overlay').classList.add('hidden');
     sessionStorage.setItem('is_authenticated', 'true');
@@ -1842,7 +1890,7 @@ function changePassword() {
   const oldPwd = document.getElementById('old-pwd').value;
   const newPwd = document.getElementById('new-pwd').value;
   const confirmPwd = document.getElementById('confirm-pwd').value;
-  const storedPwd = localStorage.getItem('SYS_PWD_V7') || '888';
+  const storedPwd = '888';
   if (oldPwd !== storedPwd) return showToast('目前密碼錯誤', 'error');
   if (!newPwd || newPwd.length < 3) return showToast('新密碼至少需要 3 個字元', 'error');
   if (newPwd !== confirmPwd) return showToast('兩次輸入的密碼不一致', 'error');
@@ -2441,6 +2489,7 @@ function getFilteredRecords() {
   const worker = document.getElementById('filter-worker').value;
   const site = document.getElementById('filter-site').value.trim().toLowerCase();
   const statusF = document.getElementById('filter-status').value;
+  const siteStatusF = document.getElementById('filter-site-status').value;
 
   return records.filter(r => {
     const matchBase = (!startD || r.date >= startD)
@@ -2450,12 +2499,18 @@ function getFilteredRecords() {
       && (!staff || r.staff === staff)
       && (!worker || r.worker === worker)
       && (!site || (r.site && r.site.toLowerCase().includes(site)));
+    
     let matchStatus = true;
     if (statusF === 'paid') matchStatus = r.paid;
     else if (statusF === 'invoiced') matchStatus = r.invoiced;
     else if (statusF === 'not_invoiced') matchStatus = (!r.invoiced && !r.paid);
     else if (statusF === 'not_paid') matchStatus = !r.paid;
-    return matchBase && matchStatus;
+    
+    let matchSiteStatus = true;
+    if (siteStatusF === 'completed') matchSiteStatus = r.isCompleted;
+    else if (siteStatusF === 'in-progress') matchSiteStatus = !r.isCompleted;
+    
+    return matchBase && matchStatus && matchSiteStatus;
   }).sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
@@ -3070,12 +3125,13 @@ function clearSiteFilter() {
 
 function resetFilters() {
   const today = new Date();
-  document.getElementById('filter-start').value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
-  document.getElementById('filter-end').value = today.toISOString().slice(0, 10);
+  document.getElementById('filter-start').value = '';
+  document.getElementById('filter-end').value = '';
   document.getElementById('filter-client').value = '';
   document.getElementById('filter-staff').value = '';
   document.getElementById('filter-site').value = '';
   document.getElementById('filter-status').value = '';
+  document.getElementById('filter-site-status').value = '';
   document.getElementById('clear-site-btn').classList.add('hidden');
   updateFilterStaffs();
   renderRecords();
@@ -3214,9 +3270,9 @@ function executePrint(mode) {
       // 工地雜項顯示
       const siteExtraNotes = [...new Set(grouped[site].map(r => r.extraNote).filter(n => n))].join(', ');
       const extraNoteStr = siteExtraNotes ? ` (${siteExtraNotes})` : '';
-      if (siteExtraStay > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">住宿費用${extraNoteStr}</td><td>1 式</td></tr>`;
-      if (siteExtraOil > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">油資費用${extraNoteStr}</td><td>1 式</td></tr>`;
-      if (siteExtraOther > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">其他費用${extraNoteStr}</td><td>1 式</td></tr>`;
+      if (siteExtraStay > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">住宿費用${extraNoteStr}</td><td>NT$ ${siteExtraStay.toLocaleString()}</td></tr>`;
+      if (siteExtraOil > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">油資費用${extraNoteStr}</td><td>NT$ ${siteExtraOil.toLocaleString()}</td></tr>`;
+      if (siteExtraOther > 0) html += `<tr class="bg-amber-50/30"><td class="text-center">-</td><td style="text-align:left">其他費用${extraNoteStr}</td><td>NT$ ${siteExtraOther.toLocaleString()}</td></tr>`;
 
       let statStrings = [];
       for (let type in siteStats) {
