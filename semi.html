@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外包人員請款表</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 5mm;
+        }
+        body {
+            font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            width: 287mm;
+            margin: 20px auto;
+            background-color: white;
+            padding: 5mm 10mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            min-height: 200mm;
+        }
+        @media print {
+            body { background-color: white; }
+            .container {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+            .no-print { display: none; }
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 5px;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 10px;
+            flex-grow: 1;
+            text-align: center;
+            margin-left: 200px;
+        }
+        .note {
+            font-size: 13px;
+            font-style: italic;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin-bottom: 10px;
+            border: 2px solid black;
+        }
+        td, th {
+            border: 1px solid black;
+            padding: 3px 2px;
+            font-size: 11px;
+            vertical-align: middle;
+            height: 22px;
+        }
+        th {
+            background-color: #f9f9f9;
+            font-weight: normal;
+            text-align: center;
+        }
+
+        .sidebar {
+            width: 150px;
+            padding: 5px;
+            text-align: left;
+        }
+        .sidebar-item {
+            margin-bottom: 3px;
+            line-height: 1.2;
+        }
+        .checkbox-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 12px;
+            font-family: inherit;
+            background: transparent;
+        }
+        textarea {
+            width: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: inherit;
+            font-size: 12px;
+            background: transparent;
+            display: block;
+        }
+        
+        /* Specific widths for main table columns */
+        .col-date { width: 35px; }
+        .col-floor { width: 45px; }
+        .col-product { width: 110px; }
+        .col-type { width: 120px; }
+        .col-unit { width: 30px; }
+        .col-qty { width: 50px; }
+        .col-price { width: 60px; }
+        .col-total { width: 70px; }
+        .col-can-req { width: 45px; }
+        .col-sign1 { width: 65px; }
+        .col-sign2 { width: 65px; }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 13px;
+            padding: 0 10px;
+        }
+        .footer-item {
+            flex: 1;
+        }
+
+        .profit-loss {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .profit-loss input {
+            width: 35px;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+        }
+
+        .section-wrapper {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="title">外包人員請款表</div>
+        <div class="note">※ 對於您的協助與配合，我們衷心感謝！</div>
+    </header>
+
+    <!-- Section 1 -->
+    <div class="section-wrapper">
+        <table>
+            <tr>
+                <td rowspan="5" class="sidebar">
+                    <div class="sidebar-item">工程名稱：<input type="text"></div>
+                    <div class="sidebar-item">工程代號：<input type="text"></div>
+                    <div class="sidebar-item">
+                        工程狀況：<br>
+                        <div class="checkbox-group"><input type="checkbox"> 已完工</div><br>
+                        <div class="checkbox-group" style="margin-left: 55px;"><input type="checkbox"> 未完工</div>
+                    </div>
+                    <div class="sidebar-item">
+                        開帳：<span style="margin-left: 45px;"><input type="checkbox"> 已開</span><br>
+                        <div class="checkbox-group"><input type="checkbox"> 未開 &rarr; 何時開立？:</div>
+                        <input type="text" style="border-bottom: 1px solid #ccc; margin-left: 15px; width: 80%;">
+                    </div>
+                    <div class="sidebar-item">
+                        目前損益：
+                        <div class="profit-loss">
+                            $ <input type="text"> &asymp; <input type="text"> %
+                        </div>
+                    </div>
+                </td>
+                <th class="col-date">日期</th>
+                <th class="col-floor">棟別/<br>樓層</th>
+                <th class="col-product">施工產品</th>
+                <th class="col-type">施工類別<br><small>(例：“框＋上”，“+EP"...等)</small></th>
+                <th class="col-unit">單位</th>
+                <th class="col-qty">完工數量</th>
+                <th class="col-price">單價</th>
+                <th class="col-total">工資總額</th>
+                <th class="col-can-req">可否<br>請款?</th>
+                <th class="col-sign1">工管簽認</th>
+                <th class="col-sign2">業務簽認</th>
+            </tr>
+            <!-- 4 Data Rows -->
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+            <tr>
+                <td colspan="12" style="height: 40px; vertical-align: top; padding: 5px;">
+                    備註說明：<textarea rows="2"></textarea>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="section-wrapper">
+        <table>
+            <tr>
+                <td rowspan="5" class="sidebar">
+                    <div class="sidebar-item">工程名稱：<input type="text"></div>
+                    <div class="sidebar-item">工程代號：<input type="text"></div>
+                    <div class="sidebar-item">
+                        工程狀況：<br>
+                        <div class="checkbox-group"><input type="checkbox"> 已完工</div><br>
+                        <div class="checkbox-group" style="margin-left: 55px;"><input type="checkbox"> 未完工</div>
+                    </div>
+                    <div class="sidebar-item">
+                        開帳：<span style="margin-left: 45px;"><input type="checkbox"> 已開</span><br>
+                        <div class="checkbox-group"><input type="checkbox"> 未開 &rarr; 何時開立？:</div>
+                        <input type="text" style="border-bottom: 1px solid #ccc; margin-left: 15px; width: 80%;">
+                    </div>
+                    <div class="sidebar-item">
+                        目前損益：
+                        <div class="profit-loss">
+                            $ <input type="text"> &asymp; <input type="text"> %
+                        </div>
+                    </div>
+                </td>
+                <!-- No header text in Section 2, just input cells -->
+                <td class="col-date"><input type="text"></td>
+                <td class="col-floor"><input type="text"></td>
+                <td class="col-product"><input type="text"></td>
+                <td class="col-type"><input type="text"></td>
+                <td class="col-unit"><input type="text"></td>
+                <td class="col-qty"><input type="text"></td>
+                <td class="col-price"><input type="text"></td>
+                <td class="col-total"><input type="text"></td>
+                <td class="col-can-req"><input type="text"></td>
+                <td class="col-sign1"><input type="text"></td>
+                <td class="col-sign2"><input type="text"></td>
+            </tr>
+            <!-- 4 Data Rows -->
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+            <tr>
+                <td colspan="12" style="height: 40px; vertical-align: top; padding: 5px;">
+                    備註說明：<textarea rows="2"></textarea>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <div class="footer-item">財務主管：</div>
+        <div class="footer-item">經理：</div>
+        <div class="footer-item">開帳人員：</div>
+        <div class="footer-item">完工輸入：</div>
+        <div class="footer-item">施工人員：</div>
+    </div>
+</div>
+
+<div class="no-print" style="text-align: center; margin-top: 10px; padding-bottom: 20px;">
+    <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 4px;">列印表單 / 儲存為 PDF</button>
+</div>
+
+</body>
+</html>
