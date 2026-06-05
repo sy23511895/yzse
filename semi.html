@@ -40,6 +40,23 @@
             justify-content: space-between;
             align-items: flex-end;
             margin-bottom: 5px;
+            position: relative;
+        }
+        .to-field {
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            width: 200px;
+        }
+        .to-field input {
+            border: none;
+            border-bottom: 1px solid black;
+            font-size: 18px;
+            font-weight: bold;
+            margin-left: 5px;
+            width: 150px;
+            outline: none;
         }
         .title {
             font-size: 28px;
@@ -47,12 +64,13 @@
             letter-spacing: 10px;
             flex-grow: 1;
             text-align: center;
-            margin-left: 200px;
         }
         .note {
             font-size: 13px;
             font-style: italic;
             color: #333;
+            width: 250px;
+            text-align: right;
         }
 
         table {
@@ -125,12 +143,18 @@
         .footer {
             display: flex;
             justify-content: space-between;
+            align-items: flex-end;
             margin-top: 5px;
             font-size: 13px;
             padding: 0 10px;
         }
         .footer-item {
             flex: 1;
+        }
+        .contractor-name {
+            font-size: 22px;
+            font-weight: bold;
+            margin-left: 10px;
         }
 
         .profit-loss {
@@ -153,6 +177,7 @@
 
 <div class="container">
     <header>
+        <div class="to-field">TO: <input type="text"></div>
         <div class="title">外包人員請款表</div>
         <div class="note">※ 對於您的協助與配合，我們衷心感謝！</div>
     </header>
@@ -261,7 +286,9 @@
         <div class="footer-item">經理：</div>
         <div class="footer-item">開帳人員：</div>
         <div class="footer-item">完工輸入：</div>
-        <div class="footer-item">施工人員：</div>
+        <div class="footer-item" style="flex: 2; display: flex; align-items: flex-end; justify-content: flex-end;">
+            <span>施工人員：</span><span class="contractor-name">昱正工程行 賴文正</span>
+        </div>
     </div>
 </div>
 
