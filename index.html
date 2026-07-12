@@ -3151,7 +3151,17 @@ function togglePrintMenu() {
 
 function executePrint(mode) {
   document.getElementById('print-dropdown').classList.add('hidden');
-  const filtered = getFilteredRecords().sort((a, b) => {
+  
+  // 取得勾選的紀錄 ID
+  const selectedIds = Array.from(document.querySelectorAll('.rec-row-checkbox:checked')).map(cb => cb.value);
+  let baseRecords = getFilteredRecords();
+  
+  // 如果有勾選，則只處理勾選的項目
+  if (selectedIds.length > 0) {
+    baseRecords = baseRecords.filter(r => selectedIds.includes(r.id));
+  }
+
+  const filtered = baseRecords.sort((a, b) => {
     // 1. 工地排序 (優先)
     if (a.site !== b.site) return a.site.localeCompare(b.site, 'zh-TW');
 
