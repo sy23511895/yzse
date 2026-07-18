@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>昱正智慧發票 QR 碼記帳系統</title>
+    <title>昱正智慧發票拍照記帳系統</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- 引入開源網頁端 QR 碼相機掃描套件 -->
-    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <!-- 引入速度最快、支援高解析度照片解碼的開源 QR 碼庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -19,7 +19,7 @@
     <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
             <h1 class="text-xl font-bold flex items-center gap-2">
-                <i class="fa-solid fa-qrcode"></i> 發票條碼智慧記帳
+                <i class="fa-solid fa-camera"></i> 發票拍照智慧記帳
             </h1>
             <div id="syncStatus" class="text-xs bg-indigo-700 border border-indigo-400 px-3 py-1.5 rounded-full flex items-center gap-1.5">
                 <span class="relative flex h-2 w-2">
@@ -65,17 +65,6 @@
             </div>
         </section>
 
-        <!-- 【全新】手機相機動態掃描面板 -->
-        <section id="scannerSection" class="hidden bg-slate-900 rounded-2xl p-4 text-center text-white relative shadow-inner">
-            <div class="flex justify-between items-center mb-2">
-                <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-camera mr-1"></i> 請將發票「左側」的 QR 碼置於框內</h3>
-                <button onclick="stopScanner()" class="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-lg">關閉相機</button>
-            </div>
-            <!-- 相機畫面渲染目標 -->
-            <div id="interactiveScanner" class="mx-auto max-w-sm rounded-xl overflow-hidden border-2 border-dashed border-amber-400"></div>
-            <p class="text-[11px] text-slate-400 mt-2">提示：電子發票有兩個 QR 碼，請對準「左邊那一個」辨識效果最好。</p>
-        </section>
-
         <!-- 快速記帳與科目管理 -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             
@@ -86,11 +75,12 @@
                         <i class="fa-solid fa-pen-to-square text-indigo-500"></i> 記帳表單
                     </h3>
                     
-                    <!-- 點擊開啟即時相機掃描 -->
-                    <button onclick="startScanner()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 shadow-sm shadow-indigo-100 cursor-pointer">
-                        <i class="fa-solid fa-qrcode text-sm"></i> 
-                        <span>開啟手機掃描</span>
-                    </button>
+                    <!-- 【全新優化】呼叫手機原生相機拍照辨識 -->
+                    <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-indigo-100">
+                        <i class="fa-solid fa-camera text-sm"></i> 
+                        <span id="scanBtnText">拍照識別發票</span>
+                        <input type="file" id="invoiceCameraInput" accept="image/*" capture="environment" class="hidden" onchange="decodeInvoicePhoto(event)">
+                    </label>
                 </div>
                 
                 <form id="transactionForm" onsubmit="handleLogTransaction(event)" class="space-y-4">
@@ -163,6 +153,9 @@
         </section>
     </main>
 
+    <!-- 用於背景處理高畫質圖像的隱藏畫布 -->
+    <canvas id="hiddenCanvas" class="hidden"></canvas>
+
     <script>
         // 【⚠️ 重要設定 ⚠️】請把下方引號內的網址，替換成你自己的 Google Apps Script 網頁應用程式 URL
         const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbwxyRsEs6Xk6g0ALfKNNQHLX8w54GJ2e-0pUiOIj5DzCOG5BiIw8lVdIyjLhUpcJq4r5Q/exec";
@@ -177,7 +170,6 @@
             transactions: []
         };
         let currentFormType = '支出';
-        let html5QrcodeScanner = null; // 儲存相機實體
 
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
@@ -187,105 +179,88 @@
         });
 
         // ==========================================
-        // ⚡ 核心功能：電子發票 QR 碼即時解碼模組
+        // 📸 拍照直接解碼核心模組（解決對不準、不嗶的終極解法）
         // ==========================================
-function startScanner() {
-            document.getElementById('scannerSection').classList.remove('hidden');
-            
-            // 初始化相機元件
-            html5QrcodeScanner = new Html5Qrcode("interactiveScanner");
-            
-            // ⚡ 速度優化版參數配置
-            const config = { 
-                fps: 25,                  // 【提升】從 15 提高到 25，每秒偵測次數變多，感應更靈敏
-                qrbox: getQrBoxSize,      // 【優化】動態縮小辨識區域，讓手機 CPU 專注在框內的小正方形
-                aspectRatio: 1.0,
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true // 【加速】如果手機支援，直接調用硬體加速解碼
-                }
-            };
+        function decodeInvoicePhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-            // 開啟後置相機進行動態對焦
-            html5QrcodeScanner.start(
-                { facingMode: "environment" }, 
-                config,
-                onScanSuccess,
-                onScanFailure
-            ).catch(err => {
-                alert("無法啟動相機，請確認是否允許網頁使用鏡頭權限！");
-                stopScanner();
-            });
-        }
+            const btnText = document.getElementById('scanBtnText');
+            btnText.textContent = "讀取條碼中...";
 
-        // ⚡ 新增動態框計算功能：避免因為框太大，導致手機抓不到發票上的小 QR 碼
-        function getQrBoxSize(viewfinderWidth, viewfinderHeight) {
-            let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            let boxWidth = Math.floor(minEdge * 0.65); // 限制辨識範圍只在正中央 65%
-            return {
-                width: boxWidth,
-                height: boxWidth
-            };
-        }
-
-        // 當相機成功讀取到 QR Code 條碼內容
-        function onScanSuccess(decodedText, decodedResult) {
-            console.log("成功讀取條碼內容: ", decodedText);
-            
-            // 台灣電子發票標準格式防呆：左側 QR 碼長度通常大於 50 碼以上
-            if (decodedText.length < 24) {
-                // 如果長度太短，可能是掃到了右側 QR 碼或一般網址，略過並繼續偵測
-                return; 
-            }
-
-            // 嗶一聲提示（利用手機系統震動）
-            if (navigator.vibrate) navigator.vibrate(100);
-
-            try {
-                // 1. 提取發票號碼：前 10 碼（例如：AA12345678）
-                const rawInvoice = decodedText.substring(0, 10);
-                const formattedInvoice = rawInvoice.substring(0, 2) + "-" + rawInvoice.substring(2);
-                
-                // 2. 提取開立日期：第 11 到 17 碼為民國年月日（例如 1150425 代表 民國115年4月25日）
-                const rawDate = decodedText.substring(10, 17); // 7位數
-                const year = parseInt(rawDate.substring(0, 3), 10) + 1911; // 轉為西元年
-                const month = rawDate.substring(3, 5);
-                const day = rawDate.substring(5, 7);
-                const formattedDate = `${year}-${month}-${day}`;
-
-                // 3. 提取含稅總金額：第 30 到 37 碼（共 8 碼，為十六進位制 HEX 編碼）
-                const hexAmount = decodedText.substring(29, 37);
-                const parsedAmount = parseInt(hexAmount, 16); // 將 16 進位轉回一般 10 進位數字
-
-                // 驗證解出來的金額與格式是否符合常理
-                if (formattedInvoice.match(/[A-Z]{2}-\d{8}/) && !isNaN(parsedAmount)) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.getElementById('hiddenCanvas');
+                    const ctx = canvas.getContext('2d');
                     
-                    // 自動帶入表單欄位
-                    document.getElementById('txInvoiceNum').value = formattedInvoice;
-                    document.getElementById('txAmount').value = parsedAmount;
-                    document.getElementById('txDate').value = formattedDate;
+                    // 為了確保發票極小條碼可以被看清，使用高解析度載入畫布
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    
+                    // 取得照片的像素點數據
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // 調用 jsQR 進行高強度精準解析
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });
 
-                    stopScanner(); // 成功抓到後自動關閉相機
-                    alert(`🎉 掃描成功！\n發票號碼：${formattedInvoice}\n日期：${formattedDate}\n總金額：$${parsedAmount}\n\n請選取記帳科目並補上備忘即可存檔！`);
-                }
-            } catch (e) {
-                console.error("解碼發票失敗", e);
-            }
-        }
+                    if (code && code.data && code.data.length >= 24) {
+                        const decodedText = code.data;
+                        console.log("成功解碼發票內容:", decodedText);
+                        
+                        try {
+                            // 1. 提取發票號碼（前10碼）
+                            const rawInvoice = decodedText.substring(0, 10);
+                            const formattedInvoice = rawInvoice.substring(0, 2) + "-" + rawInvoice.substring(2);
+                            
+                            // 2. 提取開立日期（11-17碼，民國轉西元）
+                            const rawDate = decodedText.substring(10, 17);
+                            const year = parseInt(rawDate.substring(0, 3), 10) + 1911;
+                            const month = rawDate.substring(3, 5);
+                            const day = rawDate.substring(5, 7);
+                            const formattedDate = `${year}-${month}-${day}`;
 
-        function onScanFailure(error) {
-            // 這個函式在沒瞄準時每秒會觸發多次，不需特別處理，讓鏡頭持續對焦即可
+                            // 3. 提取總金額（29-37碼，16進位轉10進位）
+                            const hexAmount = decodedText.substring(29, 37);
+                            const parsedAmount = parseInt(hexAmount, 16);
+
+                            if (formattedInvoice.match(/[A-Z]{2}-\d{8}/) && !isNaN(parsedAmount)) {
+                                document.getElementById('txInvoiceNum').value = formattedInvoice;
+                                document.getElementById('txAmount').value = parsedAmount;
+                                document.getElementById('txDate').value = formattedDate;
+                                
+                                alert(`🎉 讀取成功！\n發票號碼：${formattedInvoice}\n金額：$${parsedAmount}`);
+                            } else {
+                                alert("有抓到條碼，但格式可能不是發票左邊的 QR 碼，請對準「左側條碼」再拍一次。");
+                            }
+                        } catch (err) {
+                            alert("解析錯誤，請換個角度或在光線充足處重新拍照。");
+                        }
+                    } else {
+                        alert("❌ 無法偵測到發票 QR 碼。\n\n拍照小訣竅：\n1. 請對準發票【左邊】的 QR 碼。\n2. 手機拿穩，手震模糊或距離太遠會讀不到喔！");
+                    }
+                    btnText.textContent = "拍照識別發票";
+                    event.target.value = ''; // 清空欄位
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         // ==========================================
         // 基礎底層記帳系統邏輯
         // ==========================================
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('YUZHENG_CLOUD_ACCOUNTING_V3');
+            const saved = localStorage.getItem('YUZHENG_CLOUD_ACCOUNTING_V4');
             if (saved) { try { state = JSON.parse(saved); } catch (e) {} }
         }
 
         function saveToLocalStorage() {
-            localStorage.setItem('YUZHENG_CLOUD_ACCOUNTING_V3', JSON.stringify(state));
+            localStorage.setItem('YUZHENG_CLOUD_ACCOUNTING_V4', JSON.stringify(state));
         }
 
         function setStatus(type, text) {
