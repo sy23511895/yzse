@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>昱正智慧雲端辨識記帳系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入開源 OCR 辨識套件 (Tesseract.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen pb-12">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-expand"></i> 智慧掃描記帳本
+            </h1>
+            <!-- 雲端同步狀態 -->
+            <div id="syncStatus" class="text-xs bg-indigo-700 border border-indigo-400 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                <span class="relative flex h-2 w-2">
+                    <span id="statusPing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span id="statusDot" class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                <span id="statusText">初始化中...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-4 space-y-4">
+
+        <!-- 帳本切換區 -->
+        <section class="bg-white rounded-2xl shadow-sm p-4">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-sm font-semibold text-slate-500 tracking-wider uppercase">當前帳本</h2>
+                <div class="flex gap-2">
+                    <button onclick="pullFromCloud()" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg font-medium hover:bg-slate-200 transition flex items-center gap-1 active:scale-95">
+                        <i class="fa-solid fa-rotate"></i> 雲端拉取
+                    </button>
+                    <button onclick="promptNewLedger()" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100 transition flex items-center gap-1 active:scale-95">
+                        <i class="fa-solid fa-plus"></i> 新增帳本
+                    </button>
+                </div>
+            </div>
+            <div id="ledgerTabs" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+        </section>
+
+        <!-- 數據儀表板 -->
+        <section class="bg-white rounded-2xl shadow-sm p-4 grid grid-cols-3 gap-2 text-center">
+            <div class="bg-emerald-50 rounded-xl p-3">
+                <p class="text-xs text-emerald-700 font-medium">總收入</p>
+                <p id="statIncome" class="text-lg font-bold text-emerald-600 mt-1">$0</p>
+            </div>
+            <div class="bg-rose-50 rounded-xl p-3">
+                <p class="text-xs text-rose-700 font-medium">總支出</p>
+                <p id="statExpense" class="text-lg font-bold text-rose-600 mt-1">$0</p>
+            </div>
+            <div id="statBalanceBox" class="bg-slate-100 rounded-xl p-3">
+                <p class="text-xs text-slate-700 font-medium">結餘</p>
+                <p id="statBalance" class="text-lg font-bold text-slate-800 mt-1">$0</p>
+            </div>
+        </section>
+
+        <!-- 快速記帳與科目管理 -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            
+            <!-- 表單區 -->
+            <section class="bg-white rounded-2xl shadow-sm p-5 md:col-span-3 space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <h3 class="font-bold text-lg flex items-center gap-2 text-slate-700">
+                        <i class="fa-solid fa-pen-to-square text-indigo-500"></i> 記帳表單
+                    </h3>
+                    
+                    <!-- 【重要】智慧拍照辨識發票功能鈕 -->
+                    <label class="cursor-pointer bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95">
+                        <i class="fa-solid fa-camera text-sm"></i> 
+                        <span id="ocrBtnText">相機掃描發票</span>
+                        <input type="file" id="invoiceCamera" accept="image/*" capture="environment" class="hidden" onchange="handleInvoiceScan(event)">
+                    </label>
+                </div>
+                
+                <form id="transactionForm" onsubmit="handleLogTransaction(event)" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+                        <button type="button" id="typeExpenseBtn" onclick="setTxType('支出')" class="py-2.5 rounded-lg text-center font-bold text-sm transition bg-white text-rose-600 shadow-xs">
+                            <i class="fa-solid fa-arrow-down-long mr-1"></i> 支出
+                        </button>
+                        <button type="button" id="typeIncomeBtn" onclick="setTxType('收入')" class="py-2.5 rounded-lg text-center font-bold text-sm transition text-slate-600 hover:bg-white/50">
+                            <i class="fa-solid fa-arrow-up-long mr-1"></i> 收入
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">選擇科目</label>
+                            <select id="txCategory" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white" required></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">發票號碼 (可選/可掃描)</label>
+                            <input type="text" id="txInvoiceNum" placeholder="如：AA-12345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm uppercase placeholder:normal-case focus:outline-none focus:border-indigo-500 focus:bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">項目備忘</label>
+                            <input type="text" id="txItem" placeholder="如：五金、混凝土、午餐" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">金額</label>
+                            <input type="number" id="txAmount" min="1" placeholder="請輸入或拍照辨識" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-indigo-500 focus:bg-white" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">日期</label>
+                        <input type="date" id="txDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white" required>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md shadow-indigo-100 hover:bg-indigo-700 transition active:scale-[0.98] flex justify-center items-center gap-2 text-sm cursor-pointer">
+                        <i class="fa-solid fa-check"></i> 確認記帳
+                    </button>
+                </form>
+            </section>
+
+            <!-- 科目自訂 -->
+            <section class="bg-white rounded-2xl shadow-sm p-5 md:col-span-2 space-y-3">
+                <h3 class="font-bold text-base border-b border-slate-100 pb-2 flex items-center gap-2 text-slate-700">
+                    <i class="fa-solid fa-tags text-indigo-500"></i> 科目自訂管理
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex gap-1.5">
+                        <input type="text" id="newCategoryName" placeholder="新科目名稱" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500">
+                        <button onclick="handleAddCategory()" class="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-100 transition shrink-0 active:scale-95">新增</button>
+                    </div>
+                    <div id="categoryListDisplay" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 明細列表 -->
+        <section class="bg-white rounded-2xl shadow-sm p-4">
+            <h3 class="font-bold text-base text-slate-700 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-list-ul text-indigo-500"></i> 本帳本收支明細
+            </h3>
+            <div id="emptyState" class="hidden text-center py-8 text-slate-400 text-sm">
+                <i class="fa-regular fa-folder-open text-3xl mb-2 block"></i> 尚無記帳紀錄。
+            </div>
+            <div id="transactionList" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
+        </section>
+    </main>
+
+    <script>
+        // 【⚠️ 重要設定 ⚠️】請把下方引號內的網址，替換成你自己的 Google Apps Script 網頁應用程式 URL
+        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbwxyRsEs6Xk6g0ALfKNNQHLX8w54GJ2e-0pUiOIj5DzCOG5BiIw8lVdIyjLhUpcJq4r5Q/exec";
+
+        let state = {
+            activeLedger: "個人帳本",
+            ledgers: ["個人帳本", "公司帳本"],
+            categories: {
+                "個人帳本": { "支出": ["餐飲食品", "交通運輸", "生活雜支"], "收入": ["薪資收入", "投資理財"] },
+                "公司帳本": { "支出": ["工程材料", "機具租賃", "人工薪資"], "收入": ["工程款收入", "訂金收入"] }
+            },
+            transactions: []
+        };
+        let currentFormType = '支出';
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+            loadFromLocalStorage();
+            refreshUI(false);
+            await pullFromCloud();
+        });
+
+        // ==========================================
+        // 🔮 核心智慧相機掃描與 OCR 辨識邏輯
+        // ==========================================
+        async function handleInvoiceScan(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const btnText = document.getElementById('ocrBtnText');
+            btnText.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 辨識中...`;
+            
+            try {
+                // 調用 Tesseract.js 進行中文與英文辨識 (發票上通常混和兩者)
+                const { data: { text } } = await Tesseract.recognize(file, 'eng+chi_tra');
+                
+                console.log("=== 發票掃描辨識文字結果 ===");
+                console.log(text);
+
+                // 1. 利用正規表示法匹配台灣統一發票號碼格式 (兩個大寫英文 - 8位數字，例如 AA-12345678 或 AA12345678)
+                const invoiceRegex = /([A-Z]{2})[- ]?([0-9]{8})/;
+                const invMatch = text.toUpperCase().replace(/\s/g, '').match(/[A-Z]{2}\d{8}/);
+                
+                if (invMatch) {
+                    let rawInv = invMatch[0];
+                    // 格式化為 AA-12345678
+                    let formattedInv = rawInv.substring(0, 2) + "-" + rawInv.substring(2);
+                    document.getElementById('txInvoiceNum').value = formattedInv;
+                }
+
+                // 2. 金額辨識：尋找發票常見關鍵字「總計」、「總金額」、「Total」，並抓取其後的數字
+                // 如果是電子發票，通常會有一個明顯的大字總計
+                const amountKeywords = /(總計|總金額|TOTAL|AMOUNT|小計)[:\s]*\$?([0-9,]+)/i;
+                const amtMatch = text.match(amountKeywords);
+                
+                if (amtMatch && amtMatch[2]) {
+                    // 清除數字內可能的千分位逗號
+                    const parsedAmount = amtMatch[2].replace(/,/g, '');
+                    document.getElementById('txAmount').value = parsedAmount;
+                } else {
+                    // 備用方案：如果沒抓到總計關鍵字，抓取整篇純文字中「最大的純數字」（發票總計通常是最大的數字）
+                    const allNumbers = text.match(/\b\d[\d,]*\b/g);
+                    if (allNumbers) {
+                        const cleanNums = allNumbers
+                            .map(n => parseInt(n.replace(/,/g, ''), 10))
+                            .filter(n => n > 1 && n < 1000000); // 過濾掉日期或發票號碼等不合理大數字
+                        
+                        if(cleanNums.length > 0) {
+                            const maxNum = Math.max(...cleanNums);
+                            // 避免誤抓到發票號碼的後 8 碼，做個安全防呆
+                            if (!invMatch || !invMatch[0].includes(maxNum.toString())) {
+                                document.getElementById('txAmount').value = maxNum;
+                            }
+                        }
+                    }
+                }
+
+                alert("掃描完成！已為您自動填入辨識出的發票欄位，請確認金額與項目是否正確。");
+
+            } catch (error) {
+                console.error("OCR 辨識出錯:", error);
+                alert("掃描辨識失敗，可能是光線不足或對焦不清晰。請手動輸入或再試一次！");
+            } finally {
+                btnText.innerHTML = `相機掃描發票`;
+                event.target.value = ''; // 重設 input 確保下次同檔案可再次觸發
+            }
+        }
+
+
+        // ==========================================
+        // 基礎記帳系統邏輯
+        // ==========================================
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('YUZHENG_CLOUD_ACCOUNTING_V2');
+            if (saved) { try { state = JSON.parse(saved); } catch (e) {} }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('YUZHENG_CLOUD_ACCOUNTING_V2', JSON.stringify(state));
+        }
+
+        function setStatus(type, text) {
+            const dot = document.getElementById('statusDot');
+            const ping = document.getElementById('statusPing');
+            const txt = document.getElementById('statusText');
+            if (type === 'syncing') {
+                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-amber-500";
+                ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75";
+            } else if (type === 'success') {
+                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
+                ping.className = "hidden";
+            } else {
+                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-rose-500";
+                ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75";
+            }
+            txt.textContent = text;
+        }
+
+        async function pullFromCloud() {
+            if (!CLOUD_API_URL || CLOUD_API_URL.includes("請將")) { setStatus('error', '未設定雲端網址'); return; }
+            setStatus('syncing', '正在同步雲端...');
+            try {
+                const response = await fetch(CLOUD_API_URL);
+                const cloudData = await response.json();
+                if (cloudData && cloudData.ledgers) {
+                    state.ledgers = cloudData.ledgers;
+                    state.categories = cloudData.categories;
+                    state.transactions = cloudData.transactions;
+                    if(!state.ledgers.includes(state.activeLedger)) state.activeLedger = state.ledgers[0];
+                    saveToLocalStorage();
+                    refreshUI(false);
+                    setStatus('success', '雲端同步成功');
+                }
+            } catch (err) {
+                setStatus('error', '區域離線模式');
+            }
+        }
+
+        async function pushToCloud() {
+            if (!CLOUD_API_URL || CLOUD_API_URL.includes("請將")) return;
+            setStatus('syncing', '雲端儲存中...');
+            try {
+                const response = await fetch(CLOUD_API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: "syncAll", ledgers: state.ledgers, categories: state.categories, transactions: state.transactions
+                    })
+                });
+                setStatus('success', '雲端已同步');
+            } catch (err) {
+                setStatus('error', '同步失敗');
+            }
+        }
+
+        function refreshUI(triggerPush = true) {
+            renderLedgerTabs(); renderCategoryDropdown(); renderCategoryManagementList(); calculateStatsAndRender(); renderTransactionList();
+            saveToLocalStorage();
+            if (triggerPush) pushToCloud();
+        }
+
+        function renderLedgerTabs() {
+            const container = document.getElementById('ledgerTabs'); container.innerHTML = '';
+            state.ledgers.forEach(ledger => {
+                const isActive = ledger === state.activeLedger;
+                const btn = document.createElement('button');
+                btn.className = `px-5 py-2.5 rounded-xl text-sm font-bold transition whitespace-nowrap active:scale-95 cursor-pointer ${isActive ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+                btn.innerHTML = `<i class="fa-solid fa-book-bookmark mr-1.5 opacity-80"></i>${ledger}`;
+                btn.onclick = () => { state.activeLedger = ledger; refreshUI(false); };
+                container.appendChild(btn);
+            });
+        }
+
+        function setTxType(type) {
+            currentFormType = type;
+            const expBtn = document.getElementById('typeExpenseBtn'); const incBtn = document.getElementById('typeIncomeBtn');
+            if (type === '支出') {
+                expBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition bg-white text-rose-600 shadow-xs";
+                incBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition text-slate-600 hover:bg-white/50";
+            } else {
+                incBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition bg-white text-emerald-600 shadow-xs";
+                expBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition text-slate-600 hover:bg-white/50";
+            }
+            renderCategoryDropdown();
+        }
+
+        function renderCategoryDropdown() {
+            const select = document.getElementById('txCategory'); select.innerHTML = '';
+            ensureLedgerStructure(state.activeLedger);
+            const list = state.categories[state.activeLedger][currentFormType] || [];
+            if (list.length === 0) { select.innerHTML = `<option value="">-- 請建立科目 --</option>`; return; }
+            list.forEach(cat => {
+                const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat; select.appendChild(opt);
+            });
+        }
+
+        function renderCategoryManagementList() {
+            const container = document.getElementById('categoryListDisplay'); container.innerHTML = '';
+            ensureLedgerStructure(state.activeLedger);
+            ['支出', '收入'].forEach(type => {
+                const list = state.categories[state.activeLedger][type] || [];
+                const block = document.createElement('div'); block.className = "mb-2";
+                const title = document.createElement('div'); title.className = `text-[11px] font-bold ${type === '支出' ? 'text-rose-600' : 'text-emerald-600'} mb-1`;
+                title.textContent = `【${type}群組】`; block.appendChild(title);
+                const badgeContainer = document.createElement('div'); badgeContainer.className = "flex flex-wrap gap-1";
+                list.forEach(cat => {
+                    const badge = document.createElement('button');
+                    badge.className = `text-xs px-2 py-1 rounded-md bg-slate-100 hover:bg-rose-100 hover:text-rose-600 border border-slate-200 transition active:scale-95 flex items-center gap-1 cursor-pointer`;
+                    badge.innerHTML = `${cat} <i class="fa-solid fa-xmark text-[9px] opacity-40"></i>`;
+                    badge.onclick = () => handleDeleteCategory(type, cat);
+                    badgeContainer.appendChild(badge);
+                });
+                block.appendChild(badgeContainer); container.appendChild(block);
+            });
+        }
+
+        function calculateStatsAndRender() {
+            const currentTxs = state.transactions.filter(t => t.ledger === state.activeLedger);
+            let totalIncome = 0, totalExpense = 0;
+            currentTxs.forEach(t => {
+                if (t.type === '收入') totalIncome += Number(t.amount);
+                if (t.type === '支出') totalExpense += Number(t.amount);
+            });
+            const balance = totalIncome - totalExpense;
+            document.getElementById('statIncome').textContent = `$${totalIncome.toLocaleString()}`;
+            document.getElementById('statExpense').textContent = `$${totalExpense.toLocaleString()}`;
+            const balanceEl = document.getElementById('statBalance'); const balanceBox = document.getElementById('statBalanceBox');
+            balanceEl.textContent = `${balance >= 0 ? '+' : ''}$${balance.toLocaleString()}`;
+            if (balance > 0) { balanceBox.className = "bg-emerald-600 text-white rounded-xl p-3"; balanceEl.className = "text-lg font-bold text-white mt-1"; }
+            else if (balance < 0) { balanceBox.className = "bg-rose-600 text-white rounded-xl p-3"; balanceEl.className = "text-lg font-bold text-white mt-1"; }
+            else { balanceBox.className = "bg-slate-100 rounded-xl p-3"; balanceEl.className = "text-lg font-bold text-slate-800 mt-1"; }
+        }
+
+        function renderTransactionList() {
+            const container = document.getElementById('transactionList'); const emptyState = document.getElementById('emptyState'); container.innerHTML = '';
+            const currentTxs = state.transactions.filter(t => t.ledger === state.activeLedger).sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (currentTxs.length === 0) { emptyState.classList.remove('hidden'); return; }
+            emptyState.classList.add('hidden');
+            currentTxs.forEach(t => {
+                const row = document.createElement('div'); row.className = "flex justify-between items-center bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-slate-100 transition";
+                const isExpense = t.type === '支出';
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${isExpense ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}">${isExpense ? '支' : '收'}</div>
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs bg-slate-200 text-slate-600 font-medium px-1.5 py-0.5 rounded-md">${t.category}</span>
+                                <span class="font-bold text-sm text-slate-700">${t.item}</span>
+                                ${t.invoiceNum ? `<span class="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 px-1 rounded"><i class="fa-solid fa-receipt"></i> ${t.invoiceNum}</span>` : ''}
+                            </div>
+                            <span class="text-[11px] text-slate-400 block mt-0.5"><i class="fa-regular fa-clock mr-0.5"></i>${t.date}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-black text-sm ${isExpense ? 'text-rose-600' : 'text-emerald-600'}">${isExpense ? '-' : '+'}$${Number(t.amount).toLocaleString()}</span>
+                        <button onclick="handleDeleteTransaction(${t.id})" class="text-slate-300 hover:text-rose-600 p-1 transition rounded-lg cursor-pointer"><i class="fa-regular fa-trash-can text-sm"></i></button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function handleLogTransaction(e) {
+            e.preventDefault();
+            const category = document.getElementById('txCategory').value;
+            const invoiceNum = document.getElementById('txInvoiceNum').value.trim().toUpperCase();
+            const item = document.getElementById('txItem').value.trim();
+            const amount = document.getElementById('txAmount').value;
+            const date = document.getElementById('txDate').value;
+            if(!category) { alert("請先選擇科目！"); return; }
+
+            const newTx = {
+                id: Date.now(), ledger: state.activeLedger, type: currentFormType,
+                category: category, item: item, amount: Math.abs(Number(amount)), date: date, invoiceNum: invoiceNum
+            };
+            state.transactions.push(newTx);
+            document.getElementById('txInvoiceNum').value = ''; document.getElementById('txItem').value = ''; document.getElementById('txAmount').value = '';
+            refreshUI();
+        }
+
+        function promptNewLedger() {
+            const name = prompt("請輸入新帳本名稱："); if (!name || name.trim() === "") return;
+            const trimmed = name.trim(); if (state.ledgers.includes(trimmed)) { alert("名稱重複！"); return; }
+            state.ledgers.push(trimmed); ensureLedgerStructure(trimmed); state.activeLedger = trimmed; refreshUI();
+        }
+
+        function handleAddCategory() {
+            const input = document.getElementById('newCategoryName'); const name = input.value.trim(); if (!name) return;
+            ensureLedgerStructure(state.activeLedger);
+            if (state.categories[state.activeLedger][currentFormType].includes(name)) { alert("已存在！"); return; }
+            state.categories[state.activeLedger][currentFormType].push(name); input.value = ''; refreshUI();
+        }
+
+        function handleDeleteCategory(type, catName) {
+            if (confirm(`確定刪除「${catName}」科目？`)) {
+                state.categories[state.activeLedger][type] = state.categories[state.activeLedger][type].filter(c => c !== catName); refreshUI();
+            }
+        }
+
+        function handleDeleteTransaction(id) {
+            if (confirm("確定刪除此筆紀錄？")) { state.transactions = state.transactions.filter(t => t.id !== id); refreshUI(); }
+        }
+
+        function ensureLedgerStructure(ledgerName) { if (!state.categories[ledgerName]) state.categories[ledgerName] = { "支出": [], "收入": [] }; }
+    </script>
+</body>
+</html>
