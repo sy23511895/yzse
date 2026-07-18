@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>昱正智慧雲端辨識記帳系統</title>
+    <title>昱正智慧發票 QR 碼記帳系統</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- 引入開源 OCR 辨識套件 (Tesseract.js) -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- 引入開源網頁端 QR 碼相機掃描套件 -->
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -19,9 +19,8 @@
     <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
             <h1 class="text-xl font-bold flex items-center gap-2">
-                <i class="fa-solid fa-expand"></i> 智慧掃描記帳本
+                <i class="fa-solid fa-qrcode"></i> 發票條碼智慧記帳
             </h1>
-            <!-- 雲端同步狀態 -->
             <div id="syncStatus" class="text-xs bg-indigo-700 border border-indigo-400 px-3 py-1.5 rounded-full flex items-center gap-1.5">
                 <span class="relative flex h-2 w-2">
                     <span id="statusPing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
@@ -66,6 +65,17 @@
             </div>
         </section>
 
+        <!-- 【全新】手機相機動態掃描面板 -->
+        <section id="scannerSection" class="hidden bg-slate-900 rounded-2xl p-4 text-center text-white relative shadow-inner">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-camera mr-1"></i> 請將發票「左側」的 QR 碼置於框內</h3>
+                <button onclick="stopScanner()" class="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-lg">關閉相機</button>
+            </div>
+            <!-- 相機畫面渲染目標 -->
+            <div id="interactiveScanner" class="mx-auto max-w-sm rounded-xl overflow-hidden border-2 border-dashed border-amber-400"></div>
+            <p class="text-[11px] text-slate-400 mt-2">提示：電子發票有兩個 QR 碼，請對準「左邊那一個」辨識效果最好。</p>
+        </section>
+
         <!-- 快速記帳與科目管理 -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             
@@ -76,12 +86,11 @@
                         <i class="fa-solid fa-pen-to-square text-indigo-500"></i> 記帳表單
                     </h3>
                     
-                    <!-- 【重要】智慧拍照辨識發票功能鈕 -->
-                    <label class="cursor-pointer bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95">
-                        <i class="fa-solid fa-camera text-sm"></i> 
-                        <span id="ocrBtnText">相機掃描發票</span>
-                        <input type="file" id="invoiceCamera" accept="image/*" capture="environment" class="hidden" onchange="handleInvoiceScan(event)">
-                    </label>
+                    <!-- 點擊開啟即時相機掃描 -->
+                    <button onclick="startScanner()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 shadow-sm shadow-indigo-100 cursor-pointer">
+                        <i class="fa-solid fa-qrcode text-sm"></i> 
+                        <span>開啟手機掃描</span>
+                    </button>
                 </div>
                 
                 <form id="transactionForm" onsubmit="handleLogTransaction(event)" class="space-y-4">
@@ -100,7 +109,7 @@
                             <select id="txCategory" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white" required></select>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">發票號碼 (可選/可掃描)</label>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">發票號碼</label>
                             <input type="text" id="txInvoiceNum" placeholder="如：AA-12345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm uppercase placeholder:normal-case focus:outline-none focus:border-indigo-500 focus:bg-white">
                         </div>
                     </div>
@@ -108,11 +117,11 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 mb-1">項目備忘</label>
-                            <input type="text" id="txItem" placeholder="如：五金、混凝土、午餐" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white" required>
+                            <input type="text" id="txItem" placeholder="如：購買材料、午餐" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white" required>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 mb-1">金額</label>
-                            <input type="number" id="txAmount" min="1" placeholder="請輸入或拍照辨識" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-indigo-500 focus:bg-white" required>
+                            <input type="number" id="txAmount" min="1" placeholder="請輸入金額" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-indigo-500 focus:bg-white" required>
                         </div>
                     </div>
 
@@ -168,6 +177,7 @@
             transactions: []
         };
         let currentFormType = '支出';
+        let html5QrcodeScanner = null; // 儲存相機實體
 
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
@@ -177,210 +187,192 @@
         });
 
         // ==========================================
-        // 🔮 核心智慧相機掃描與 OCR 辨識邏輯
+        // ⚡ 核心功能：電子發票 QR 碼即時解碼模組
         // ==========================================
-        async function handleInvoiceScan(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const btnText = document.getElementById('ocrBtnText');
-            btnText.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 辨識中...`;
+        function startScanner() {
+            document.getElementById('scannerSection').classList.remove('hidden');
             
-            try {
-                // 調用 Tesseract.js 進行中文與英文辨識 (發票上通常混和兩者)
-                const { data: { text } } = await Tesseract.recognize(file, 'eng+chi_tra');
-                
-                console.log("=== 發票掃描辨識文字結果 ===");
-                console.log(text);
+            // 初始化相機元件
+            html5QrcodeScanner = new Html5Qrcode("interactiveScanner");
+            
+            const config = { 
+                fps: 15, // 每秒偵測 15 次
+                qrbox: { width: 220, height: 220 }, // 瞄準框大小
+                aspectRatio: 1.0
+            };
 
-                // 1. 利用正規表示法匹配台灣統一發票號碼格式 (兩個大寫英文 - 8位數字，例如 AA-12345678 或 AA12345678)
-                const invoiceRegex = /([A-Z]{2})[- ]?([0-9]{8})/;
-                const invMatch = text.toUpperCase().replace(/\s/g, '').match(/[A-Z]{2}\d{8}/);
-                
-                if (invMatch) {
-                    let rawInv = invMatch[0];
-                    // 格式化為 AA-12345678
-                    let formattedInv = rawInv.substring(0, 2) + "-" + rawInv.substring(2);
-                    document.getElementById('txInvoiceNum').value = formattedInv;
-                }
+            // 開啟後置相機 (environment) 進行動態對焦
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                alert("無法啟動相機，請確認是否允許網頁使用鏡頭權限！");
+                stopScanner();
+            });
+        }
 
-                // 2. 金額辨識：尋找發票常見關鍵字「總計」、「總金額」、「Total」，並抓取其後的數字
-                // 如果是電子發票，通常會有一個明顯的大字總計
-                const amountKeywords = /(總計|總金額|TOTAL|AMOUNT|小計)[:\s]*\$?([0-9,]+)/i;
-                const amtMatch = text.match(amountKeywords);
-                
-                if (amtMatch && amtMatch[2]) {
-                    // 清除數字內可能的千分位逗號
-                    const parsedAmount = amtMatch[2].replace(/,/g, '');
-                    document.getElementById('txAmount').value = parsedAmount;
-                } else {
-                    // 備用方案：如果沒抓到總計關鍵字，抓取整篇純文字中「最大的純數字」（發票總計通常是最大的數字）
-                    const allNumbers = text.match(/\b\d[\d,]*\b/g);
-                    if (allNumbers) {
-                        const cleanNums = allNumbers
-                            .map(n => parseInt(n.replace(/,/g, ''), 10))
-                            .filter(n => n > 1 && n < 1000000); // 過濾掉日期或發票號碼等不合理大數字
-                        
-                        if(cleanNums.length > 0) {
-                            const maxNum = Math.max(...cleanNums);
-                            // 避免誤抓到發票號碼的後 8 碼，做個安全防呆
-                            if (!invMatch || !invMatch[0].includes(maxNum.toString())) {
-                                document.getElementById('txAmount').value = maxNum;
-                            }
-                        }
-                    }
-                }
-
-                alert("掃描完成！已為您自動填入辨識出的發票欄位，請確認金額與項目是否正確。");
-
-            } catch (error) {
-                console.error("OCR 辨識出錯:", error);
-                alert("掃描辨識失敗，可能是光線不足或對焦不清晰。請手動輸入或再試一次！");
-            } finally {
-                btnText.innerHTML = `相機掃描發票`;
-                event.target.value = ''; // 重設 input 確保下次同檔案可再次觸發
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    document.getElementById('scannerSection').classList.add('hidden');
+                    html5QrcodeScanner = null;
+                }).catch(err => console.error(err));
+            } else {
+                document.getElementById('scannerSection').classList.add('hidden');
             }
         }
 
+        // 當相機成功讀取到 QR Code 條碼內容
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log("成功讀取條碼內容: ", decodedText);
+            
+            // 台灣電子發票標準格式防呆：左側 QR 碼長度通常大於 50 碼以上
+            if (decodedText.length < 24) {
+                // 如果長度太短，可能是掃到了右側 QR 碼或一般網址，略過並繼續偵測
+                return; 
+            }
+
+            // 嗶一聲提示（利用手機系統震動）
+            if (navigator.vibrate) navigator.vibrate(100);
+
+            try {
+                // 1. 提取發票號碼：前 10 碼（例如：AA12345678）
+                const rawInvoice = decodedText.substring(0, 10);
+                const formattedInvoice = rawInvoice.substring(0, 2) + "-" + rawInvoice.substring(2);
+                
+                // 2. 提取開立日期：第 11 到 17 碼為民國年月日（例如 1150425 代表 民國115年4月25日）
+                const rawDate = decodedText.substring(10, 17); // 7位數
+                const year = parseInt(rawDate.substring(0, 3), 10) + 1911; // 轉為西元年
+                const month = rawDate.substring(3, 5);
+                const day = rawDate.substring(5, 7);
+                const formattedDate = `${year}-${month}-${day}`;
+
+                // 3. 提取含稅總金額：第 30 到 37 碼（共 8 碼，為十六進位制 HEX 編碼）
+                const hexAmount = decodedText.substring(29, 37);
+                const parsedAmount = parseInt(hexAmount, 16); // 將 16 進位轉回一般 10 進位數字
+
+                // 驗證解出來的金額與格式是否符合常理
+                if (formattedInvoice.match(/[A-Z]{2}-\d{8}/) && !isNaN(parsedAmount)) {
+                    
+                    // 自動帶入表單欄位
+                    document.getElementById('txInvoiceNum').value = formattedInvoice;
+                    document.getElementById('txAmount').value = parsedAmount;
+                    document.getElementById('txDate').value = formattedDate;
+
+                    stopScanner(); // 成功抓到後自動關閉相機
+                    alert(`🎉 掃描成功！\n發票號碼：${formattedInvoice}\n日期：${formattedDate}\n總金額：$${parsedAmount}\n\n請選取記帳科目並補上備忘即可存檔！`);
+                }
+            } catch (e) {
+                console.error("解碼發票失敗", e);
+            }
+        }
+
+        function onScanFailure(error) {
+            // 這個函式在沒瞄準時每秒會觸發多次，不需特別處理，讓鏡頭持續對焦即可
+        }
 
         // ==========================================
-        // 基礎記帳系統邏輯
+        // 基礎底層記帳系統邏輯
         // ==========================================
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('YUZHENG_CLOUD_ACCOUNTING_V2');
+            const saved = localStorage.getItem('YUZHENG_CLOUD_ACCOUNTING_V3');
             if (saved) { try { state = JSON.parse(saved); } catch (e) {} }
         }
 
         function saveToLocalStorage() {
-            localStorage.setItem('YUZHENG_CLOUD_ACCOUNTING_V2', JSON.stringify(state));
+            localStorage.setItem('YUZHENG_CLOUD_ACCOUNTING_V3', JSON.stringify(state));
         }
 
         function setStatus(type, text) {
-            const dot = document.getElementById('statusDot');
-            const ping = document.getElementById('statusPing');
-            const txt = document.getElementById('statusText');
+            const dot = document.getElementById('statusDot'); const ping = document.getElementById('statusPing'); const txt = document.getElementById('statusText');
             if (type === 'syncing') {
-                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-amber-500";
-                ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75";
+                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-amber-500"; ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75";
             } else if (type === 'success') {
-                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
-                ping.className = "hidden";
+                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500"; ping.className = "hidden";
             } else {
-                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-rose-500";
-                ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75";
+                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-rose-500"; ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75";
             }
             txt.textContent = text;
         }
 
         async function pullFromCloud() {
             if (!CLOUD_API_URL || CLOUD_API_URL.includes("請將")) { setStatus('error', '未設定雲端網址'); return; }
-            setStatus('syncing', '正在同步雲端...');
+            setStatus('syncing', '雲端同步中...');
             try {
-                const response = await fetch(CLOUD_API_URL);
-                const cloudData = await response.json();
+                const response = await fetch(CLOUD_API_URL); const cloudData = await response.json();
                 if (cloudData && cloudData.ledgers) {
-                    state.ledgers = cloudData.ledgers;
-                    state.categories = cloudData.categories;
-                    state.transactions = cloudData.transactions;
+                    state.ledgers = cloudData.ledgers; state.categories = cloudData.categories; state.transactions = cloudData.transactions;
                     if(!state.ledgers.includes(state.activeLedger)) state.activeLedger = state.ledgers[0];
-                    saveToLocalStorage();
-                    refreshUI(false);
-                    setStatus('success', '雲端同步成功');
+                    saveToLocalStorage(); refreshUI(false); setStatus('success', '雲端同步成功');
                 }
-            } catch (err) {
-                setStatus('error', '區域離線模式');
-            }
+            } catch (err) { setStatus('error', '區域離線模式'); }
         }
 
         async function pushToCloud() {
             if (!CLOUD_API_URL || CLOUD_API_URL.includes("請將")) return;
-            setStatus('syncing', '雲端儲存中...');
             try {
-                const response = await fetch(CLOUD_API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: "syncAll", ledgers: state.ledgers, categories: state.categories, transactions: state.transactions
-                    })
+                await fetch(CLOUD_API_URL, {
+                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "syncAll", ledgers: state.ledgers, categories: state.categories, transactions: state.transactions })
                 });
                 setStatus('success', '雲端已同步');
-            } catch (err) {
-                setStatus('error', '同步失敗');
-            }
+            } catch (err) { setStatus('error', '同步失敗'); }
         }
 
         function refreshUI(triggerPush = true) {
             renderLedgerTabs(); renderCategoryDropdown(); renderCategoryManagementList(); calculateStatsAndRender(); renderTransactionList();
-            saveToLocalStorage();
-            if (triggerPush) pushToCloud();
+            saveToLocalStorage(); if (triggerPush) pushToCloud();
         }
 
         function renderLedgerTabs() {
             const container = document.getElementById('ledgerTabs'); container.innerHTML = '';
             state.ledgers.forEach(ledger => {
-                const isActive = ledger === state.activeLedger;
-                const btn = document.createElement('button');
+                const isActive = ledger === state.activeLedger; const btn = document.createElement('button');
                 btn.className = `px-5 py-2.5 rounded-xl text-sm font-bold transition whitespace-nowrap active:scale-95 cursor-pointer ${isActive ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
                 btn.innerHTML = `<i class="fa-solid fa-book-bookmark mr-1.5 opacity-80"></i>${ledger}`;
-                btn.onclick = () => { state.activeLedger = ledger; refreshUI(false); };
-                container.appendChild(btn);
+                btn.onclick = () => { state.activeLedger = ledger; refreshUI(false); }; container.appendChild(btn);
             });
         }
 
         function setTxType(type) {
-            currentFormType = type;
-            const expBtn = document.getElementById('typeExpenseBtn'); const incBtn = document.getElementById('typeIncomeBtn');
+            currentFormType = type; const expBtn = document.getElementById('typeExpenseBtn'); const incBtn = document.getElementById('typeIncomeBtn');
             if (type === '支出') {
-                expBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition bg-white text-rose-600 shadow-xs";
-                incBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition text-slate-600 hover:bg-white/50";
+                expBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition bg-white text-rose-600 shadow-xs"; incBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition text-slate-600 hover:bg-white/50";
             } else {
-                incBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition bg-white text-emerald-600 shadow-xs";
-                expBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition text-slate-600 hover:bg-white/50";
+                incBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition bg-white text-emerald-600 shadow-xs"; expBtn.className = "py-2.5 rounded-xl text-center font-bold text-sm transition text-slate-600 hover:bg-white/50";
             }
             renderCategoryDropdown();
         }
 
         function renderCategoryDropdown() {
-            const select = document.getElementById('txCategory'); select.innerHTML = '';
-            ensureLedgerStructure(state.activeLedger);
+            const select = document.getElementById('txCategory'); select.innerHTML = ''; ensureLedgerStructure(state.activeLedger);
             const list = state.categories[state.activeLedger][currentFormType] || [];
             if (list.length === 0) { select.innerHTML = `<option value="">-- 請建立科目 --</option>`; return; }
-            list.forEach(cat => {
-                const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat; select.appendChild(opt);
-            });
+            list.forEach(cat => { const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat; select.appendChild(opt); });
         }
 
         function renderCategoryManagementList() {
-            const container = document.getElementById('categoryListDisplay'); container.innerHTML = '';
-            ensureLedgerStructure(state.activeLedger);
+            const container = document.getElementById('categoryListDisplay'); container.innerHTML = ''; ensureLedgerStructure(state.activeLedger);
             ['支出', '收入'].forEach(type => {
                 const list = state.categories[state.activeLedger][type] || [];
                 const block = document.createElement('div'); block.className = "mb-2";
-                const title = document.createElement('div'); title.className = `text-[11px] font-bold ${type === '支出' ? 'text-rose-600' : 'text-emerald-600'} mb-1`;
-                title.textContent = `【${type}群組】`; block.appendChild(title);
+                const title = document.createElement('div'); title.className = `text-[11px] font-bold ${type === '支出' ? 'text-rose-600' : 'text-emerald-600'} mb-1`; title.textContent = `【${type}群組】`; block.appendChild(title);
                 const badgeContainer = document.createElement('div'); badgeContainer.className = "flex flex-wrap gap-1";
                 list.forEach(cat => {
-                    const badge = document.createElement('button');
-                    badge.className = `text-xs px-2 py-1 rounded-md bg-slate-100 hover:bg-rose-100 hover:text-rose-600 border border-slate-200 transition active:scale-95 flex items-center gap-1 cursor-pointer`;
-                    badge.innerHTML = `${cat} <i class="fa-solid fa-xmark text-[9px] opacity-40"></i>`;
-                    badge.onclick = () => handleDeleteCategory(type, cat);
-                    badgeContainer.appendChild(badge);
+                    const badge = document.createElement('button'); badge.className = `text-xs px-2 py-1 rounded-md bg-slate-100 hover:bg-rose-100 hover:text-rose-600 border border-slate-200 transition active:scale-95 flex items-center gap-1 cursor-pointer`;
+                    badge.innerHTML = `${cat} <i class="fa-solid fa-xmark text-[9px] opacity-40"></i>`; badge.onclick = () => handleDeleteCategory(type, cat); badgeContainer.appendChild(badge);
                 });
                 block.appendChild(badgeContainer); container.appendChild(block);
             });
         }
 
         function calculateStatsAndRender() {
-            const currentTxs = state.transactions.filter(t => t.ledger === state.activeLedger);
-            let totalIncome = 0, totalExpense = 0;
-            currentTxs.forEach(t => {
-                if (t.type === '收入') totalIncome += Number(t.amount);
-                if (t.type === '支出') totalExpense += Number(t.amount);
-            });
+            const currentTxs = state.transactions.filter(t => t.ledger === state.activeLedger); let totalIncome = 0, totalExpense = 0;
+            currentTxs.forEach(t => { if (t.type === '收入') totalIncome += Number(t.amount); if (t.type === '支出') totalExpense += Number(t.amount); });
             const balance = totalIncome - totalExpense;
-            document.getElementById('statIncome').textContent = `$${totalIncome.toLocaleString()}`;
-            document.getElementById('statExpense').textContent = `$${totalExpense.toLocaleString()}`;
+            document.getElementById('statIncome').textContent = `$${totalIncome.toLocaleString()}`; document.getElementById('statExpense').textContent = `$${totalExpense.toLocaleString()}`;
             const balanceEl = document.getElementById('statBalance'); const balanceBox = document.getElementById('statBalanceBox');
             balanceEl.textContent = `${balance >= 0 ? '+' : ''}$${balance.toLocaleString()}`;
             if (balance > 0) { balanceBox.className = "bg-emerald-600 text-white rounded-xl p-3"; balanceEl.className = "text-lg font-bold text-white mt-1"; }
@@ -419,11 +411,8 @@
 
         function handleLogTransaction(e) {
             e.preventDefault();
-            const category = document.getElementById('txCategory').value;
-            const invoiceNum = document.getElementById('txInvoiceNum').value.trim().toUpperCase();
-            const item = document.getElementById('txItem').value.trim();
-            const amount = document.getElementById('txAmount').value;
-            const date = document.getElementById('txDate').value;
+            const category = document.getElementById('txCategory').value; const invoiceNum = document.getElementById('txInvoiceNum').value.trim().toUpperCase();
+            const item = document.getElementById('txItem').value.trim(); const amount = document.getElementById('txAmount').value; const date = document.getElementById('txDate').value;
             if(!category) { alert("請先選擇科目！"); return; }
 
             const newTx = {
