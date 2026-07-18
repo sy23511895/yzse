@@ -189,19 +189,23 @@
         // ==========================================
         // ⚡ 核心功能：電子發票 QR 碼即時解碼模組
         // ==========================================
-        function startScanner() {
+function startScanner() {
             document.getElementById('scannerSection').classList.remove('hidden');
             
             // 初始化相機元件
             html5QrcodeScanner = new Html5Qrcode("interactiveScanner");
             
+            // ⚡ 速度優化版參數配置
             const config = { 
-                fps: 15, // 每秒偵測 15 次
-                qrbox: { width: 220, height: 220 }, // 瞄準框大小
-                aspectRatio: 1.0
+                fps: 25,                  // 【提升】從 15 提高到 25，每秒偵測次數變多，感應更靈敏
+                qrbox: getQrBoxSize,      // 【優化】動態縮小辨識區域，讓手機 CPU 專注在框內的小正方形
+                aspectRatio: 1.0,
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true // 【加速】如果手機支援，直接調用硬體加速解碼
+                }
             };
 
-            // 開啟後置相機 (environment) 進行動態對焦
+            // 開啟後置相機進行動態對焦
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 config,
@@ -213,15 +217,14 @@
             });
         }
 
-        function stopScanner() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    document.getElementById('scannerSection').classList.add('hidden');
-                    html5QrcodeScanner = null;
-                }).catch(err => console.error(err));
-            } else {
-                document.getElementById('scannerSection').classList.add('hidden');
-            }
+        // ⚡ 新增動態框計算功能：避免因為框太大，導致手機抓不到發票上的小 QR 碼
+        function getQrBoxSize(viewfinderWidth, viewfinderHeight) {
+            let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            let boxWidth = Math.floor(minEdge * 0.65); // 限制辨識範圍只在正中央 65%
+            return {
+                width: boxWidth,
+                height: boxWidth
+            };
         }
 
         // 當相機成功讀取到 QR Code 條碼內容
