@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>昱正智慧發票掃描記帳系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 高性能 QR 碼掃描引擎 -->
+    <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 相機掃描介面樣式 */
+        .scanner-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 9 / 16;
+            background: #000;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #scannerVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .scan-frame {
+            width: 70%;
+            aspect-ratio: 1;
+            border: 3px solid #4f46e5;
+            border-radius: 1rem;
+            position: relative;
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .scan-frame::before,
+        .scan-frame::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #4f46e5;
+        }
+
+        .scan-frame::before {
+            top: -3px;
+            left: -3px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .scan-frame::after {
+            bottom: -3px;
+            right: -3px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .scan-frame .corner-tl,
+        .scan-frame .corner-tr,
+        .scan-frame .corner-bl,
+        .scan-frame .corner-br {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #4f46e5;
+        }
+
+        .scan-frame .corner-tl {
+            top: -3px;
+            right: -3px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .scan-frame .corner-tr {
+            top: -3px;
+            left: -3px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .scan-frame .corner-bl {
+            bottom: -3px;
+            right: -3px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .scan-frame .corner-br {
+            bottom: -3px;
+            left: -3px;
+            border-right: none;
+            border-top: none;
+        }
+
+        /* 掃描線動畫 */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #10b981, transparent);
+            animation: scanMove 2s infinite;
+        }
+
+        @keyframes scanMove {
+            0% { top: 0%; }
+            50% { top: 50%; }
+            100% { top: 100%; }
+        }
+
+        /* 掃描成功動畫 */
+        .scan-success {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(16, 185, 129, 0.3);
+            border-radius: 1rem;
+            animation: successFlash 0.5s ease-out;
+        }
+
+        @keyframes successFlash {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .scanner-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            z-index: 10;
+        }
+
+        .scanner-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .scanner-btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-toggle {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-toggle:hover {
+            background: #4338ca;
+        }
+
+        .btn-close {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-close:hover {
+            background: #dc2626;
+        }
+
+        .btn-torch {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-torch:hover {
+            background: #d97706;
+        }
+
+        .btn-torch.active {
+            background: #fbbf24;
+            color: #000;
+        }
+
+        /* 掃描狀態指示 */
+        .scan-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 0.5rem;
+            font-size: 12px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .scan-status.active {
+            background: rgba(79, 70, 229, 0.8);
+        }
+
+        .scan-status.success {
+            background: rgba(16, 185, 129, 0.8);
+        }
+
+        .scan-status.error {
+            background: rgba(239, 68, 68, 0.8);
+        }
+
+        /* 掃描結果預覽卡片 */
+        .scan-result-card {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 1.5rem 1.5rem 0 0;
+            padding: 1.5rem;
+            max-height: 40vh;
+            overflow-y: auto;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            z-index: 40;
+        }
+
+        .scan-result-card.show {
+            transform: translateY(0);
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .result-value {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .result-actions button {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-accept {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-accept:hover {
+            background: #4338ca;
+        }
+
+        .btn-reject {
+            background: #e2e8f0;
+            color: #64748b;
+        }
+
+        .btn-reject:hover {
+            background: #cbd5e1;
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 640px) {
+            .scanner-container {
+                aspect-ratio: 4 / 5;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-camera"></i> 發票掃描記帳
+            </h1>
+            <div id="syncStatus" class="text-xs bg-indigo-700 border border-indigo-400 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                <span class="relative flex h-2 w-2">
+                    <span id="statusPing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span id="statusDot" class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                <span id="statusText">初始化中...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-4 pb-32">
+
+        <!-- 帳本切換區 -->
+        <section class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-sm font-semibold text-slate-500 tracking-wider uppercase">當前帳本</h2>
+                <div class="flex gap-2">
+                    <button onclick="pullFromCloud()" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg font-medium hover:bg-slate-200 transition flex items-center gap-1 active:scale-95">
+                        <i class="fa-solid fa-rotate"></i> 雲端拉取
+                    </button>
+                    <button onclick="promptNewLedger()" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100 transition flex items-center gap-1 active:scale-95">
+                        <i class="fa-solid fa-plus"></i> 新增帳本
+                    </button>
+                </div>
+            </div>
+            <div id="ledgerTabs" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+        </section>
+
+        <!-- 數據儀表板 -->
+        <section class="bg-white rounded-2xl shadow-sm p-4 grid grid-cols-3 gap-2 text-center mb-4">
+            <div class="bg-emerald-50 rounded-xl p-3">
+                <p class="text-xs text-emerald-700 font-medium">總收入</p>
+                <p id="statIncome" class="text-lg font-bold text-emerald-600 mt-1">$0</p>
+            </div>
+            <div class="bg-rose-50 rounded-xl p-3">
+                <p class="text-xs text-rose-700 font-medium">總支出</p>
+                <p id="statExpense" class="text-lg font-bold text-rose-600 mt-1">$0</p>
+            </div>
+            <div id="statBalanceBox" class="bg-slate-100 rounded-xl p-3">
+                <p class="text-xs text-slate-700 font-medium">結餘</p>
+                <p id="statBalance" class="text-lg font-bold text-slate-800 mt-1">$0</p>
+            </div>
+        </section>
+
+        <!-- 掃描模式切換 -->
+        <div class="flex gap-2 mb-4">
+            <button onclick="switchMode('scan')" id="btnScanMode" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition active:scale-95">
+                <i class="fa-solid fa-qrcode"></i> 掃描模式
+            </button>
+            <button onclick="switchMode('form')" id="btnFormMode" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition hover:bg-slate-200 active:scale-95">
+                <i class="fa-solid fa-pen-to-square"></i> 手動輸入
+            </button>
+        </div>
+
+        <!-- 【掃描模式】相機掃描介面 -->
+        <section id="scanMode" class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+            <div class="scanner-container">
+                <video id="scannerVideo"></video>
+                <div class="scanner-overlay">
+                    <div class="scan-frame">
+                        <div class="scan-line"></div>
+                    </div>
+                </div>
+                <div class="scan-status" id="scanStatus">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> 初始化相機中...
+                </div>
+                <div class="scanner-controls">
+                    <button class="scanner-btn btn-toggle" onclick="toggleScanner()" id="btnToggleScanner" title="開啟/關閉掃描">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                    <button class="scanner-btn btn-torch" onclick="toggleTorch()" id="btnTorch" title="手電筒" style="display: none;">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </button>
+                    <button class="scanner-btn btn-close" onclick="switchMode('form')" title="關閉掃描">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 【手動模式】記帳表單 -->
+        <section id="formMode" class="bg-white rounded-2xl shadow-sm p-5 space-y-4 mb-4" style="display: none;">
+            <h3 class="font-bold text-lg flex items-center gap-2 text-slate-700">
+                <i class="fa-solid fa-pen-to-square text-indigo-500"></i> 記帳表單
+            </h3>
+            
+            <form id="transactionForm" onsubmit="handleLogTransaction(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+                    <button type="button" id="typeExpenseBtn" onclick="setTxType('支出')" class="py-2.5 rounded-lg text-center font-bold text-sm transition bg-white text-rose-600 shadow-xs">
+                        <i class="fa-solid fa-arrow-down-long mr-1"></i> 支出
+                    </button>
+                    <button type="button" id="typeIncomeBtn" onclick="setTxType('收入')" class="py-2.5 rounded-lg text-center font-bold text-sm transition text-slate-600 hover:bg-white/50">
+                        <i class="fa-solid fa-arrow-up-long mr-1"></i> 收入
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">選擇科目</label>
+                        <select id="txCategory" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white" required></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">發票號碼</label>
+                        <input type="text" id="txInvoiceNum" placeholder="如：AA-12345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm uppercase placeholder:normal-case focus:outline-none focus:border-indigo-500 focus:bg-white">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">項目備忘</label>
+                        <input type="text" id="txItem" placeholder="如：購買材料、午餐" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">金額</label>
+                        <input type="number" id="txAmount" min="1" placeholder="請輸入金額" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-indigo-500 focus:bg-white" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">日期</label>
+                    <input type="date" id="txDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white" required>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md shadow-indigo-100 hover:bg-indigo-700 transition active:scale-[0.98] flex justify-center items-center gap-2 text-sm cursor-pointer">
+                    <i class="fa-solid fa-check"></i> 確認記帳
+                </button>
+            </form>
+        </section>
+
+        <!-- 明細列表 -->
+        <section class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+            <h3 class="font-bold text-base text-slate-700 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-list-ul text-indigo-500"></i> 本帳本收支明細
+            </h3>
+            <div id="emptyState" class="hidden text-center py-8 text-slate-400 text-sm">
+                <i class="fa-regular fa-folder-open text-3xl mb-2 block"></i> 尚無記帳紀錄。
+            </div>
+            <div id="transactionList" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
+        </section>
+
+        <!-- 科目管理 -->
+        <section class="bg-white rounded-2xl shadow-sm p-5 space-y-3 mb-4">
+            <h3 class="font-bold text-base border-b border-slate-100 pb-2 flex items-center gap-2 text-slate-700">
+                <i class="fa-solid fa-tags text-indigo-500"></i> 科目自訂管理
+            </h3>
+            <div class="space-y-3">
+                <div class="flex gap-1.5">
+                    <input type="text" id="newCategoryName" placeholder="新科目名稱" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500">
+                    <button onclick="handleAddCategory()" class="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-100 transition shrink-0 active:scale-95">新增</button>
+                </div>
+                <div id="categoryListDisplay" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 掃描結果預覽卡片 -->
+    <div id="resultCard" class="scan-result-card">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-lg">掃描結果</h3>
+            <button onclick="closeScanResult()" class="text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+        <div id="resultContent"></div>
+        <div class="result-actions">
+            <button class="btn-accept" onclick="acceptScanResult()">
+                <i class="fa-solid fa-check mr-1"></i> 接受
+            </button>
+            <button class="btn-reject" onclick="closeScanResult()">
+                <i class="fa-solid fa-xmark mr-1"></i> 重新掃描
+            </button>
+        </div>
+    </div>
+
+    <!-- 隱藏畫布與音效 -->
+    <canvas id="processCanvas" class="hidden"></canvas>
+    <audio id="scanSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==" type="audio/wav">
+    </audio>
+
+    <script>
+        // ==========================================
+        // 全局配置
+        // ==========================================
+        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbwxyRsEs6Xk6g0ALfKNNQHLX8w54GJ2e-0pUiOIj5DzCOG5BiIw8lVdIyjLhUpcJq4r5Q/exec";
+        
+        let state = {
+            activeLedger: "個人帳本",
+            ledgers: ["個人帳本", "公司帳本"],
+            categories: {
+                "個人帳本": { "支出": ["餐飲食品", "交通運輸", "生活雜支"], "收入": ["薪資收入", "投資理財"] },
+                "公司帳本": { "支出": ["工程材料", "機具租賃", "人工薪資"], "收入": ["工程款收入", "訂金收入"] }
+            },
+            transactions: []
+        };
+
+        let currentFormType = '支出';
+        let qrScanner = null;
+        let isScannerActive = false;
+        let lastScannedCode = null;
+        let scanCooldown = false;
+
+        // ==========================================
+        // 初始化
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+            loadFromLocalStorage();
+            refreshUI(false);
+            await pullFromCloud();
+            await initScanner();
+        });
+
+        // ==========================================
+        // 🎥 即時相機掃描模組
+        // ==========================================
+        async function initScanner() {
+            try {
+                const video = document.getElementById('scannerVideo');
+                const statusEl = document.getElementById('scanStatus');
+                
+                qrScanner = new QrScanner(
+                    video,
+                    result => handleScanResult(result),
+                    {
+                        onDecodeError: (err) => {
+                            // 靜默處理解碼錯誤
+                        },
+                        preferredCamera: 'environment',
+                        maxScansPerSecond: 10,
+                        highlightScanRegion: false,
+                        highlightCodeOutline: false,
+                    }
+                );
+
+                // 檢查手電筒支援
+                const hasFlash = await QrScanner.hasFlashSupport();
+                if (hasFlash) {
+                    document.getElementById('btnTorch').style.display = 'block';
+                }
+
+                statusEl.textContent = '✓ 相機已就緒，點擊開始掃描';
+                statusEl.classList.remove('active');
+                document.getElementById('btnToggleScanner').innerHTML = '<i class="fa-solid fa-play"></i>';
+                
+            } catch (err) {
+                console.error('相機初始化失敗:', err);
+                document.getElementById('scanStatus').textContent = '❌ 無法開啟相機，請檢查權限';
+                document.getElementById('scanStatus').classList.add('error');
+            }
+        }
+
+        function toggleScanner() {
+            if (!qrScanner) return;
+            
+            if (isScannerActive) {
+                qrScanner.stop();
+                isScannerActive = false;
+                document.getElementById('btnToggleScanner').innerHTML = '<i class="fa-solid fa-play"></i>';
+                document.getElementById('scanStatus').textContent = '掃描已暫停';
+                document.getElementById('scanStatus').classList.remove('active');
+            } else {
+                qrScanner.start();
+                isScannerActive = true;
+                document.getElementById('btnToggleScanner').innerHTML = '<i class="fa-solid fa-pause"></i>';
+                document.getElementById('scanStatus').textContent = '掃描中...';
+                document.getElementById('scanStatus').classList.add('active');
+            }
+        }
+
+        async function toggleTorch() {
+            if (!qrScanner) return;
+            try {
+                await qrScanner.toggleFlash();
+                document.getElementById('btnTorch').classList.toggle('active');
+            } catch (err) {
+                console.error('手電筒切換失敗:', err);
+            }
+        }
+
+        function handleScanResult(result) {
+            // 防止重複掃描同一個碼
+            if (scanCooldown || lastScannedCode === result.data) return;
+            
+            const decodedText = result.data;
+            
+            // 驗證是否為有效的台灣發票 QR 碼
+            if (decodedText.length >= 24) {
+                scanCooldown = true;
+                lastScannedCode = decodedText;
+                
+                // 播放掃描成功音效
+                playSound();
+                
+                // 顯示掃描成功視覺反饋
+                showScanSuccess();
+                
+                // 暫停掃描
+                if (qrScanner) qrScanner.stop();
+                isScannerActive = false;
+                document.getElementById('btnToggleScanner').innerHTML = '<i class="fa-solid fa-play"></i>';
+                
+                // 解析並顯示結果
+                const invoiceData = parseInvoiceData(decodedText);
+                if (invoiceData) {
+                    displayScanResult(invoiceData);
+                }
+                
+                // 冷卻期 (2秒後可再掃)
+                setTimeout(() => {
+                    scanCooldown = false;
+                    lastScannedCode = null;
+                }, 2000);
+            }
+        }
+
+        function showScanSuccess() {
+            const overlay = document.querySelector('.scanner-overlay');
+            const flash = document.createElement('div');
+            flash.className = 'scan-success';
+            overlay.appendChild(flash);
+            setTimeout(() => flash.remove(), 500);
+        }
+
+        function playSound() {
+            const audio = document.getElementById('scanSound');
+            audio.currentTime = 0;
+            audio.play().catch(() => {});
+        }
+
+        function parseInvoiceData(decodedText) {
+            try {
+                const rawInvoice = decodedText.substring(0, 10);
+                const formattedInvoice = rawInvoice.substring(0, 2) + "-" + rawInvoice.substring(2);
+                
+                const rawDate = decodedText.substring(10, 17);
+                const year = parseInt(rawDate.substring(0, 3), 10) + 1911;
+                const month = rawDate.substring(3, 5);
+                const day = rawDate.substring(5, 7);
+                const formattedDate = `${year}-${month}-${day}`;
+
+                const hexAmount = decodedText.substring(29, 37);
+                const parsedAmount = parseInt(hexAmount, 16);
+
+                if (formattedInvoice.match(/[A-Z]{2}-\d{8}/) && !isNaN(parsedAmount) && parsedAmount > 0) {
+                    return {
+                        invoiceNum: formattedInvoice,
+                        amount: parsedAmount,
+                        date: formattedDate,
+                        raw: decodedText
+                    };
+                }
+            } catch (err) {
+                console.error('解析錯誤:', err);
+            }
+            return null;
+        }
+
+        function displayScanResult(invoiceData) {
+            const resultCard = document.getElementById('resultCard');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultContent.innerHTML = `
+                <div class="result-item">
+                    <span class="result-label">發票號碼</span>
+                    <span class="result-value">${invoiceData.invoiceNum}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">金額</span>
+                    <span class="result-value">$${invoiceData.amount.toLocaleString()}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">開立日期</span>
+                    <span class="result-value">${invoiceData.date}</span>
+                </div>
+            `;
+            
+            // 儲存當前掃描結果供接受時使用
+            window.currentScanResult = invoiceData;
+            
+            resultCard.classList.add('show');
+        }
+
+        function acceptScanResult() {
+            if (!window.currentScanResult) return;
+            
+            const data = window.currentScanResult;
+            document.getElementById('txInvoiceNum').value = data.invoiceNum;
+            document.getElementById('txAmount').value = data.amount;
+            document.getElementById('txDate').value = data.date;
+            
+            // 自動選擇科目
+            autoSelectCategory(data.amount);
+            
+            // 切換到表單模式
+            switchMode('form');
+            closeScanResult();
+        }
+
+        function closeScanResult() {
+            document.getElementById('resultCard').classList.remove('show');
+            // 恢復掃描
+            if (qrScanner && !isScannerActive) {
+                qrScanner.start();
+                isScannerActive = true;
+                document.getElementById('btnToggleScanner').innerHTML = '<i class="fa-solid fa-pause"></i>';
+                document.getElementById('scanStatus').textContent = '掃描中...';
+                document.getElementById('scanStatus').classList.add('active');
+            }
+        }
+
+        function autoSelectCategory(amount) {
+            if (state.activeLedger === "個人帳本") {
+                const select = document.getElementById('txCategory');
+                if (select.options.length > 0) {
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value.includes("餐") || select.options[i].value.includes("食")) {
+                            select.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // UI 模式切換
+        // ==========================================
+        function switchMode(mode) {
+            const scanMode = document.getElementById('scanMode');
+            const formMode = document.getElementById('formMode');
+            const btnScan = document.getElementById('btnScanMode');
+            const btnForm = document.getElementById('btnFormMode');
+            
+            if (mode === 'scan') {
+                scanMode.style.display = 'block';
+                formMode.style.display = 'none';
+                btnScan.classList.add('bg-indigo-600', 'text-white');
+                btnScan.classList.remove('bg-slate-100', 'text-slate-600');
+                btnForm.classList.remove('bg-indigo-600', 'text-white');
+                btnForm.classList.add('bg-slate-100', 'text-slate-600');
+                
+                if (qrScanner && !isScannerActive) {
+                    qrScanner.start();
+                    isScannerActive = true;
+                    document.getElementById('btnToggleScanner').innerHTML = '<i class="fa-solid fa-pause"></i>';
+                    document.getElementById('scanStatus').textContent = '掃描中...';
+                    document.getElementById('scanStatus').classList.add('active');
+                }
+            } else {
+                scanMode.style.display = 'none';
+                formMode.style.display = 'block';
+                btnForm.classList.add('bg-indigo-600', 'text-white');
+                btnForm.classList.remove('bg-slate-100', 'text-slate-600');
+                btnScan.classList.remove('bg-indigo-600', 'text-white');
+                btnScan.classList.add('bg-slate-100', 'text-slate-600');
+                
+                if (qrScanner && isScannerActive) {
+                    qrScanner.stop();
+                    isScannerActive = false;
+                    document.getElementById('btnToggleScanner').innerHTML = '<i class="fa-solid fa-play"></i>';
+                    document.getElementById('scanStatus').textContent = '掃描已暫停';
+                    document.getElementById('scanStatus').classList.remove('active');
+                }
+            }
+        }
+
+        // ==========================================
+        // 基礎記帳系統邏輯
+        // ==========================================
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('YUZHENG_CLOUD_ACCOUNTING_V4');
+            if (saved) { try { state = JSON.parse(saved); } catch (e) {} }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('YUZHENG_CLOUD_ACCOUNTING_V4', JSON.stringify(state));
+        }
+
+        function setStatus(type, text) {
+            const dot = document.getElementById('statusDot');
+            const ping = document.getElementById('statusPing');
+            const txt = document.getElementById('statusText');
+            if (type === 'syncing') {
+                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-amber-500";
+                ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75";
+            } else if (type === 'success') {
+                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
+                ping.className = "hidden";
+            } else {
+                dot.className = "relative inline-flex rounded-full h-2 w-2 bg-rose-500";
+                ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75";
+            }
+            txt.textContent = text;
+        }
+
+        async function pullFromCloud() {
+            if (!CLOUD_API_URL || CLOUD_API_URL.includes("請將")) { setStatus('error', '未設定雲端網址'); return; }
+            setStatus('syncing', '雲端同步中...');
+            try {
+                const response = await fetch(CLOUD_API_URL);
+                const cloudData = await response.json();
+                if (cloudData && cloudData.ledgers) {
+                    state.ledgers = cloudData.ledgers;
+                    state.categories = cloudData.categories;
+                    state.transactions = cloudData.transactions;
+                    if(!state.ledgers.includes(state.activeLedger)) state.activeLedger = state.ledgers[0];
+                    saveToLocalStorage();
+                    refreshUI(false);
+                    setStatus('success', '雲端同步成功');
+                }
+            } catch (err) { setStatus('error', '區域離線模式'); }
+        }
+
+        async function pushToCloud() {
+            if (!CLOUD_API_URL || CLOUD_API_URL.includes("請將")) return;
+            try {
+                await fetch(CLOUD_API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: "syncAll",
+                        ledgers: state.ledgers,
+                        categories: state.categories,
+                        transactions: state.transactions
+                    })
+                });
+                setStatus('success', '雲端已同步');
+            } catch (err) { setStatus('error', '同步失敗'); }
+        }
+
+        function refreshUI(triggerPush = true) {
+            renderLedgerTabs();
+            renderCategoryDropdown();
+            renderCategoryManagementList();
+            calculateStatsAndRender();
+            renderTransactionList();
+            saveToLocalStorage();
+            if (triggerPush) pushToCloud();
+        }
+
+        function renderLedgerTabs() {
+            const container = document.getElementById('ledgerTabs');
+            container.innerHTML = '';
+            state.ledgers.forEach(ledger => {
+                const isActive = ledger === state.activeLedger;
+                const btn = document.createElement('button');
+                btn.className = `px-5 py-2.5 rounded-xl text-sm font-bold transition whitespace-nowrap active:scale-95 cursor-pointer ${isActive ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+                btn.innerHTML = `<i class="fa-solid fa-book-bookmark mr-1.5 opacity-80"></i>${ledger}`;
+                btn.onclick = () => { state.activeLedger = ledger; refreshUI(false); };
+                container.appendChild(btn);
+            });
+        }
+
+        function setTxType(type) {
+            currentFormType = type;
+            const expBtn = document.getElementById('typeExpenseBtn');
+            const incBtn = document.getElementById('typeIncomeBtn');
+            if (type === '支出') {
+                expBtn.className = "py-2.5 rounded-lg text-center font-bold text-sm transition bg-white text-rose-600 shadow-xs";
+                incBtn.className = "py-2.5 rounded-lg text-center font-bold text-sm transition text-slate-600 hover:bg-white/50";
+            } else {
+                incBtn.className = "py-2.5 rounded-lg text-center font-bold text-sm transition bg-white text-emerald-600 shadow-xs";
+                expBtn.className = "py-2.5 rounded-lg text-center font-bold text-sm transition text-slate-600 hover:bg-white/50";
+            }
+            renderCategoryDropdown();
+        }
+
+        function renderCategoryDropdown() {
+            const select = document.getElementById('txCategory');
+            select.innerHTML = '';
+            ensureLedgerStructure(state.activeLedger);
+            const list = state.categories[state.activeLedger][currentFormType] || [];
+            if (list.length === 0) {
+                select.innerHTML = `<option value="">-- 請建立科目 --</option>`;
+                return;
+            }
+            list.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                select.appendChild(opt);
+            });
+        }
+
+        function renderCategoryManagementList() {
+            const container = document.getElementById('categoryListDisplay');
+            container.innerHTML = '';
+            ensureLedgerStructure(state.activeLedger);
+            ['支出', '收入'].forEach(type => {
+                const list = state.categories[state.activeLedger][type] || [];
+                const block = document.createElement('div');
+                block.className = "mb-2";
+                const title = document.createElement('div');
+                title.className = `text-[11px] font-bold ${type === '支出' ? 'text-rose-600' : 'text-emerald-600'} mb-1`;
+                title.textContent = `【${type}群組】`;
+                block.appendChild(title);
+                const badgeContainer = document.createElement('div');
+                badgeContainer.className = "flex flex-wrap gap-1";
+                list.forEach(cat => {
+                    const badge = document.createElement('button');
+                    badge.className = `text-xs px-2 py-1 rounded-md bg-slate-100 hover:bg-rose-100 hover:text-rose-600 border border-slate-200 transition active:scale-95 flex items-center gap-1 cursor-pointer`;
+                    badge.innerHTML = `${cat} <i class="fa-solid fa-xmark text-[9px] opacity-40"></i>`;
+                    badge.onclick = () => handleDeleteCategory(type, cat);
+                    badgeContainer.appendChild(badge);
+                });
+                block.appendChild(badgeContainer);
+                container.appendChild(block);
+            });
+        }
+
+        function calculateStatsAndRender() {
+            const currentTxs = state.transactions.filter(t => t.ledger === state.activeLedger);
+            let totalIncome = 0, totalExpense = 0;
+            currentTxs.forEach(t => {
+                if (t.type === '收入') totalIncome += Number(t.amount);
+                if (t.type === '支出') totalExpense += Number(t.amount);
+            });
+            const balance = totalIncome - totalExpense;
+            document.getElementById('statIncome').textContent = `$${totalIncome.toLocaleString()}`;
+            document.getElementById('statExpense').textContent = `$${totalExpense.toLocaleString()}`;
+            const balanceEl = document.getElementById('statBalance');
+            const balanceBox = document.getElementById('statBalanceBox');
+            balanceEl.textContent = `${balance >= 0 ? '+' : ''}$${balance.toLocaleString()}`;
+            if (balance > 0) {
+                balanceBox.className = "bg-emerald-600 text-white rounded-xl p-3";
+                balanceEl.className = "text-lg font-bold text-white mt-1";
+            } else if (balance < 0) {
+                balanceBox.className = "bg-rose-600 text-white rounded-xl p-3";
+                balanceEl.className = "text-lg font-bold text-white mt-1";
+            } else {
+                balanceBox.className = "bg-slate-100 rounded-xl p-3";
+                balanceEl.className = "text-lg font-bold text-slate-800 mt-1";
+            }
+        }
+
+        function renderTransactionList() {
+            const container = document.getElementById('transactionList');
+            const emptyState = document.getElementById('emptyState');
+            container.innerHTML = '';
+            const currentTxs = state.transactions
+                .filter(t => t.ledger === state.activeLedger)
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (currentTxs.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+            currentTxs.forEach(t => {
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-slate-100 transition";
+                const isExpense = t.type === '支出';
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${isExpense ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}">${isExpense ? '支' : '收'}</div>
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs bg-slate-200 text-slate-600 font-medium px-1.5 py-0.5 rounded-md">${t.category}</span>
+                                <span class="font-bold text-sm text-slate-700">${t.item}</span>
+                                ${t.invoiceNum ? `<span class="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 px-1 rounded"><i class="fa-solid fa-receipt"></i> ${t.invoiceNum}</span>` : ''}
+                            </div>
+                            <span class="text-[11px] text-slate-400 block mt-0.5"><i class="fa-regular fa-clock mr-0.5"></i>${t.date}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-black text-sm ${isExpense ? 'text-rose-600' : 'text-emerald-600'}">${isExpense ? '-' : '+'}$${Number(t.amount).toLocaleString()}</span>
+                        <button onclick="handleDeleteTransaction(${t.id})" class="text-slate-300 hover:text-rose-600 p-1 transition rounded-lg cursor-pointer"><i class="fa-regular fa-trash-can text-sm"></i></button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function handleLogTransaction(e) {
+            e.preventDefault();
+            const category = document.getElementById('txCategory').value;
+            const invoiceNum = document.getElementById('txInvoiceNum').value.trim().toUpperCase();
+            const item = document.getElementById('txItem').value.trim();
+            const amount = document.getElementById('txAmount').value;
+            const date = document.getElementById('txDate').value;
+            if(!category) { alert("請先選擇科目！"); return; }
+
+            const newTx = {
+                id: Date.now(),
+                ledger: state.activeLedger,
+                type: currentFormType,
+                category: category,
+                item: item,
+                amount: Math.abs(Number(amount)),
+                date: date,
+                invoiceNum: invoiceNum
+            };
+            state.transactions.push(newTx);
+            document.getElementById('txInvoiceNum').value = '';
+            document.getElementById('txItem').value = '';
+            document.getElementById('txAmount').value = '';
+            refreshUI();
+            alert('✓ 記帳成功！');
+        }
+
+        function promptNewLedger() {
+            const name = prompt("請輸入新帳本名稱：");
+            if (!name || name.trim() === "") return;
+            const trimmed = name.trim();
+            if (state.ledgers.includes(trimmed)) { alert("名稱重複！"); return; }
+            state.ledgers.push(trimmed);
+            ensureLedgerStructure(trimmed);
+            state.activeLedger = trimmed;
+            refreshUI();
+        }
+
+        function handleAddCategory() {
+            const input = document.getElementById('newCategoryName');
+            const name = input.value.trim();
+            if (!name) return;
+            ensureLedgerStructure(state.activeLedger);
+            if (state.categories[state.activeLedger][currentFormType].includes(name)) {
+                alert("已存在！");
+                return;
+            }
+            state.categories[state.activeLedger][currentFormType].push(name);
+            input.value = '';
+            refreshUI();
+        }
+
+        function handleDeleteCategory(type, catName) {
+            if (confirm(`確定刪除「${catName}」科目？`)) {
+                state.categories[state.activeLedger][type] = state.categories[state.activeLedger][type].filter(c => c !== catName);
+                refreshUI();
+            }
+        }
+
+        function handleDeleteTransaction(id) {
+            if (confirm("確定刪除此筆紀錄？")) {
+                state.transactions = state.transactions.filter(t => t.id !== id);
+                refreshUI();
+            }
+        }
+
+        function ensureLedgerStructure(ledgerName) {
+            if (!state.categories[ledgerName]) {
+                state.categories[ledgerName] = { "支出": [], "收入": [] };
+            }
+        }
+    </script>
+</body>
+</html>
