@@ -232,7 +232,7 @@
         <img src="yuzheng_logo_v2_skirting.png" alt="昱正工程行 Logo" class="w-24 h-auto mb-2">
         <div class="text-center">
           <h1 class="text-lg font-black leading-tight">工程管理系統</h1>
-          <span class="text-indigo-400 text-[10px] font-bold tracking-widest uppercase">PRO v8.0</span>
+          <span class="text-indigo-400 text-[10px] font-bold tracking-widest uppercase">PRO v8.1</span>
         </div>
       </div>
       
@@ -278,7 +278,7 @@
 
         <button onclick="switchView('project-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
           <i class="fas fa-project-diagram text-slate-700 group-hover:text-slate-900"></i>
-          <span class="font-bold text-sm">專案管理</span>
+          <span class="font-bold text-sm">工程案件管理</span>
         </button>
 
         <button onclick="switchView('client-mgmt')" class="w-full flex items-center justify-center space-x-3 px-4 py-3 rounded-xl bg-white/40 hover:bg-white/60 transition group">
@@ -428,7 +428,7 @@
             </div>
           </div>
           <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">專案篩選</label>
+            <label class="text-xs font-bold text-slate-500">工地篩選</label>
             <select id="filter-project" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="renderRecords()"></select>
           </div>
           <div class="space-y-1">
@@ -441,8 +441,8 @@
           </div>
         </div>
 
-        <!-- 第二行：工地狀態、施工師傅、款項狀態、工地名稱 -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4 pt-4 border-t border-slate-100">
+        <!-- 第二行：工地狀態、施工師傅、款項狀態 -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4 pt-4 border-t border-slate-100">
           <div class="space-y-1">
             <label class="text-xs font-bold text-slate-500">工地狀態</label>
             <select id="filter-site-status" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm" onchange="renderRecords()">
@@ -464,14 +464,6 @@
               <option value="not_paid">未收款</option>
               <option value="paid">已入帳</option>
             </select>
-          </div>
-          <div class="space-y-1">
-            <label class="text-xs font-bold text-slate-500">工地名稱</label>
-            <div class="search-wrap">
-              <input type="text" id="filter-site" placeholder="搜尋工地..."
-                class="w-full bg-slate-50 border border-slate-200 p-2.5 pr-8 rounded-xl text-sm" oninput="toggleClearBtn()">
-              <i id="clear-site-btn" class="fas fa-times-circle clear-btn hidden" onclick="clearSiteFilter()"></i>
-            </div>
           </div>
         </div>
 
@@ -513,7 +505,8 @@
                   <input type="checkbox" id="rec-select-all" class="w-4 h-4 accent-indigo-600" onchange="toggleSelectAllRecords()">
                 </th>
                 <th class="p-4 text-xs font-bold text-slate-500">日期</th>
-                <th class="p-4 text-xs font-bold text-slate-500">工地 / 客戶</th>
+                <th class="p-4 text-xs font-bold text-slate-500">工地</th>
+                <th class="p-4 text-xs font-bold text-slate-500">客戶</th>
                 <th class="p-4 text-xs font-bold text-slate-500">項目 / 備註</th>
                 <th class="p-4 text-xs font-bold text-slate-500 text-right">數量 / 單價</th>
                 <th class="p-4 text-xs font-bold text-slate-500 text-right">合計</th>
@@ -663,6 +656,9 @@
           <button onclick="openCashModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-sm transition shadow-lg">
             <i class="fas fa-plus mr-1"></i>新增收支
           </button>
+          <button onclick="switchView('project-profit')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-sm transition shadow-lg">
+            <i class="fas fa-chart-line mr-1"></i>工地盈虧
+          </button>
           <button onclick="switchView('main')" class="text-slate-500 hover:text-indigo-600 font-bold text-sm transition">
             <i class="fas fa-arrow-left mr-1"></i>返回總覽
           </button>
@@ -717,6 +713,9 @@
               <option value="">全部帳戶</option>
             </select>
             <input type="month" id="cash-filter-month" class="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-xs" onchange="renderCashRecords()">
+            <select id="cash-filter-project" class="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-xs" onchange="renderCashRecords()">
+              <option value="">全部工地</option>
+            </select>
           </div>
         </div>
         <div class="table-container">
@@ -758,6 +757,82 @@
             <div class="text-2xl font-black" id="cash-all-balance">$0</div>
             <div class="text-[10px] text-indigo-100 mt-1">所有帳戶結餘合計</div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 工地盈虧統計頁面 ===== -->
+    <section id="view-project-profit" class="view-section fade-in">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+        <div>
+          <div class="flex items-center gap-2 mb-1"><span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">V8.1</span><span class="text-xs font-bold text-slate-400">工地財務報表</span></div>
+          <h2 class="text-2xl font-black flex items-center"><i class="fas fa-chart-line mr-3 text-emerald-600"></i>工地盈虧統計</h2>
+          <p class="text-xs text-slate-400 mt-1">工地完工後，即可查看該工地的總收入、總開銷與盈餘。</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="renderProjectProfit(); showToast('資料已更新');" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm transition shadow-sm">
+            <i class="fas fa-sync-alt mr-1"></i>更新資料
+          </button>
+          <button onclick="switchView('cash-mgmt')" class="text-slate-500 hover:text-indigo-600 font-bold text-sm transition">
+            <i class="fas fa-arrow-left mr-1"></i>返回帳務中心
+          </button>
+        </div>
+      </div>
+
+      <!-- 工地盈虧總覽 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+        <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3">
+          <span class="font-bold text-slate-700"><i class="fas fa-th-list mr-2 text-emerald-400"></i>各工地盈虧總覽</span>
+          <div class="flex flex-wrap gap-2">
+            <select id="pp-filter-status" class="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-xs" onchange="renderProjectProfit()">
+              <option value="">全部工地（含進行中）</option>
+              <option value="completed">僅已完工工地</option>
+              <option value="progress">僅進行中工地</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="w-full text-sm text-left">
+            <thead>
+              <tr class="border-b border-slate-100">
+                <th class="p-4 text-xs font-bold text-slate-500">工地名稱</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-center">狀態</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-right">工地收入</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-right">工地開銷</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-right">盈餘</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-center">操作</th>
+              </tr>
+            </thead>
+            <tbody id="pp-list" class="divide-y divide-slate-50"></tbody>
+          </table>
+          <div id="pp-empty" class="hidden py-16 text-center text-slate-400">
+            <i class="fas fa-chart-line text-4xl mb-3 block"></i>
+            <p class="font-bold">目前沒有工地盈虧資料</p>
+            <p class="text-xs mt-1">新增收支時選擇「關聯工地」，完工後即可查看盈虧</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 工地盈虧明細 -->
+      <div id="pp-detail-card" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3">
+          <span class="font-bold text-slate-700" id="pp-detail-title"><i class="fas fa-map-marker-alt mr-2 text-indigo-400"></i>工地收支明細</span>
+          <button onclick="document.getElementById('pp-detail-card').classList.add('hidden')" class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-bold hover:bg-slate-200 transition">
+            <i class="fas fa-times mr-1"></i>收起明細
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="w-full text-sm text-left">
+            <thead>
+              <tr class="border-b border-slate-100">
+                <th class="p-4 text-xs font-bold text-slate-500">日期</th>
+                <th class="p-4 text-xs font-bold text-slate-500">類型 / 科目</th>
+                <th class="p-4 text-xs font-bold text-slate-500">摘要 / 備註</th>
+                <th class="p-4 text-xs font-bold text-slate-500 text-right">金額</th>
+              </tr>
+            </thead>
+            <tbody id="pp-detail-list" class="divide-y divide-slate-50"></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -1066,19 +1141,19 @@
       </div>
     </section>
 
-    <!-- ===== 頁面：專案管理 ===== -->
+    <!-- ===== 頁面：工程案件管理 ===== -->
     <section id="view-project-mgmt" class="view-section fade-in">
       <div class="flex items-center justify-between mb-8">
         <div class="flex items-center space-x-3">
           <div class="bg-indigo-600 p-3 rounded-2xl shadow-lg shadow-indigo-200"><i class="fas fa-project-diagram text-white text-xl"></i></div>
           <div>
-            <h2 class="text-2xl font-black text-slate-800">專案管理</h2>
-            <p class="text-slate-400 text-xs font-bold tracking-widest uppercase">Project Management</p>
+            <h2 class="text-2xl font-black text-slate-800">工程案件管理</h2>
+            <p class="text-slate-400 text-xs font-bold tracking-widest uppercase">Engineering Case Management</p>
           </div>
         </div>
         <button onclick="openProjectModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black shadow-lg transition flex items-center space-x-2">
           <i class="fas fa-plus"></i>
-          <span>建立新專案</span>
+          <span>建立新工程案件</span>
         </button>
       </div>
 
@@ -1086,7 +1161,7 @@
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-slate-50/50 border-b border-slate-100">
-              <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">專案名稱</th>
+              <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">工程案件名稱</th>
               <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">所屬客戶</th>
               <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">工務人員</th>
               <th class="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">進場 / 退場</th>
@@ -1100,23 +1175,23 @@
           <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="fas fa-project-diagram text-slate-200 text-3xl"></i>
           </div>
-          <p class="text-slate-400 font-bold">目前尚無專案資料</p>
+          <p class="text-slate-400 font-bold">目前尚無工程案件資料</p>
         </div>
       </div>
     </section>
 
-    <!-- 專案編輯 Modal -->
+    <!-- 工程案件編輯 Modal -->
     <div id="project-modal" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center z-[10003] p-4">
       <div class="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
         <div class="flex justify-between items-center mb-5">
-          <h3 class="text-xl font-black" id="project-modal-title">建立新專案</h3>
+          <h3 class="text-xl font-black" id="project-modal-title">建立新工程案件</h3>
           <button onclick="closeModal('project-modal')" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fas fa-times"></i></button>
         </div>
         <div class="space-y-4">
           <input type="hidden" id="p-edit-id">
           <div>
-            <label class="text-xs font-bold text-slate-500">專案名稱 *</label>
-            <input type="text" id="p-name" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="例如：田中工地專案">
+            <label class="text-xs font-bold text-slate-500">工程案件名稱 *</label>
+            <input type="text" id="p-name" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="例如：田中工地工程">
           </div>
           <div>
             <label class="text-xs font-bold text-slate-500">所屬客戶 *</label>
@@ -1132,27 +1207,33 @@
           </div>
           <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
             <div class="flex justify-between items-center mb-3">
-              <h4 class="font-bold text-indigo-700 flex items-center text-xs"><i class="fas fa-tags mr-2"></i>專案專屬工項單價設定</h4>
+              <h4 class="font-bold text-indigo-700 flex items-center text-xs"><i class="fas fa-tags mr-2"></i>工程案件專屬工項單價設定</h4>
               <button onclick="addProjectPriceRow()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold"><i class="fas fa-plus-circle mr-1"></i>增加項目</button>
             </div>
             <div id="p-price-list" class="space-y-2 max-h-40 overflow-y-auto pr-2">
               <!-- 動態載入工項單價輸入框 -->
             </div>
-            <p class="text-[10px] text-indigo-400 mt-2">💡 提示：在此設定該專案的專屬單價，新增紀錄時會自動帶出。</p>
+            <p class="text-[10px] text-indigo-400 mt-2">💡 提示：在此設定該工程案件的專屬單價，新增紀錄時會自動帶出。</p>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs font-bold text-slate-500">進場日期</label>
               <input type="date" id="p-start-date" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1">
             </div>
-            <div>
-              <label class="text-xs font-bold text-slate-500">退場日期</label>
-              <input type="date" id="p-end-date" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1">
-            </div>
+          <div>
+            <label class="text-xs font-bold text-slate-500">退場日期</label>
+            <input type="date" id="p-end-date" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1">
+          </div>
+          <div>
+            <label class="flex items-center gap-3 border border-slate-200 p-3 rounded-xl cursor-pointer hover:bg-amber-50 transition">
+              <input type="checkbox" id="p-is-completed" class="w-4 h-4 accent-amber-600">
+              <span class="text-sm font-bold text-amber-600"><i class="fas fa-check-circle mr-1"></i>已完工（勾選後將不再顯示於新增工程紀錄選單中）</span>
+            </label>
+          </div>
           </div>
           <div class="flex gap-3 mt-6">
             <button onclick="closeModal('project-modal')" class="flex-1 bg-slate-100 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition">取消</button>
-            <button onclick="saveProject()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-indigo-700 transition">儲存專案</button>
+            <button onclick="saveProject()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-indigo-700 transition">儲存工程案件</button>
           </div>
         </div>
       </div>
@@ -1555,9 +1636,18 @@
           <option value="transfer">轉帳 (⇄)</option>
         </select>
       </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="text-xs font-bold text-slate-500">摘要 / 項目說明 *</label>
+          <input type="text" id="cash-title" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="例如：購買材料、油資加滿">
+        </div>
+      </div>
       <div>
-        <label class="text-xs font-bold text-slate-500">摘要 / 項目說明 *</label>
-        <input type="text" id="cash-title" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="例如：購買材料、油資加滿">
+        <label class="text-xs font-bold text-slate-500">關聯工地 <span class="text-slate-300">(選填)</span></label>
+        <select id="cash-project" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1">
+          <option value="">（不選擇工地）</option>
+        </select>
+        <p class="text-[10px] text-slate-400 mt-1"><i class="fas fa-info-circle mr-1"></i>關聯工地後，可在帳務中心的「工地盈虧」查詢該工地的開銷與盈餘。</p>
       </div>
       
       <div id="cash-to-account-wrap" class="hidden">
@@ -1625,16 +1715,16 @@
     </div>
 	    <form id="record-form" class="space-y-4">
 	      <input type="hidden" id="edit-id">
-	      <div class="grid grid-cols-2 gap-4">
-	        <div>
-	          <label class="text-xs font-bold text-slate-500">施工日期 *</label>
-	          <input type="date" id="r-date" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" required>
-	        </div>
-	        <div>
-	          <label class="text-xs font-bold text-slate-500">所屬專案 (選填)</label>
-	          <select id="r-project" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" onchange="onProjectChange()"></select>
-	        </div>
-	      </div>
+		      <div class="grid grid-cols-2 gap-4">
+		        <div>
+		          <label class="text-xs font-bold text-slate-500">施工日期 *</label>
+		          <input type="date" id="r-date" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" required>
+		        </div>
+		        <div>
+		          <label class="text-xs font-bold text-slate-500">工地名稱 *</label>
+		          <select id="r-project" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" onchange="onProjectChange()" required></select>
+		        </div>
+		      </div>
 	      <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="text-xs font-bold text-slate-500">客戶 *</label>
@@ -1655,10 +1745,10 @@
 		          <input type="number" id="r-worker-price" step="1" placeholder="給師傅的單價" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1 bg-orange-50">
 		        </div>
 		      </div>
-	      <div>
-	        <label class="text-xs font-bold text-slate-500">工地/樓層/階段細節 *</label>
-	        <input type="text" id="r-site" placeholder="例如：3樓 A區 或 第一階段" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" required>
-	      </div>
+		      <div>
+		        <label class="text-xs font-bold text-slate-500">工地 / 樓層 / 階段細節 (選填)</label>
+		        <input type="text" id="r-site" placeholder="例如：3樓 A區 或 第一階段 (選填)" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1">
+		      </div>
       <div class="grid grid-cols-12 gap-2 items-end">
         <div class="col-span-5">
           <label class="text-xs font-bold text-slate-500">項目類型 *</label>
@@ -1732,6 +1822,29 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+
+<div id="quick-project-modal" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center z-50 p-4">
+  <div class="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="text-xl font-black text-slate-800">快速新增工程案件</h3>
+      <button onclick="closeModal('quick-project-modal')" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-xs font-bold text-slate-500">工地名稱 (工程案件) *</label>
+        <input type="text" id="qp-name" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="例如：信義路 A 棟大樓">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-slate-500">關聯客戶 (選填)</label>
+        <select id="qp-client" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></select>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('quick-project-modal')" class="flex-1 bg-slate-100 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition">取消</button>
+        <button type="button" onclick="saveQuickProject()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-indigo-700 transition">確定新增</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2300,6 +2413,7 @@ function switchView(view) {
   if (view === 'invoice-mgmt') renderInvoiceHistoryList();
   if (view === 'receivable') renderReceivables();
   if (view === 'cash-mgmt') renderCashRecords();
+  if (view === 'project-profit') renderProjectProfit();
   if (view === 'cash-cat-mgmt') renderCashCatList();
   if (view === 'recurring-expense') renderRecurringExpenses();
   document.getElementById('print-dropdown').classList.add('hidden');
@@ -2465,7 +2579,9 @@ function renderProjects() {
   }
   
   if (empty) empty.classList.add('hidden');
-  list.innerHTML = projects.map((p, idx) => `
+  list.innerHTML = projects.map((p, idx) => {
+    const checkedAttr = p.isCompleted ? 'checked' : '';
+    return `
     <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition">
       <td class="p-4 font-bold text-slate-700">${p.name}</td>
       <td class="p-4 text-slate-500 text-sm">${p.client}</td>
@@ -2474,13 +2590,18 @@ function renderProjects() {
         <div class="font-bold text-indigo-600">${p.startDate || '--'}</div>
         <div class="text-[10px] text-slate-400">${p.endDate || '--'}</div>
       </td>
-      <td class="p-4 text-slate-500 text-sm">${p.createdAt}</td>
+      <td class="p-4 text-center">
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="checkbox" class="w-4 h-4 accent-amber-600 rounded" ${checkedAttr} onchange="toggleProjectComplete('${p.id}', this.checked)">
+          <span class="ml-2 text-xs font-bold ${p.isCompleted ? 'text-amber-600' : 'text-slate-400'}">${p.isCompleted ? '已完工' : '進行中'}</span>
+        </label>
+      </td>
       <td class="p-4 text-center">
         <button onclick="editProject('${p.id}')" class="text-indigo-500 hover:text-indigo-700 mr-3 transition"><i class="fas fa-edit"></i></button>
         <button onclick="deleteProject('${p.id}')" class="text-slate-300 hover:text-rose-500 transition"><i class="fas fa-trash-alt"></i></button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 function openProjectModal() {
@@ -2492,7 +2613,8 @@ function openProjectModal() {
   document.getElementById('p-client').innerHTML = clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
   syncProjectStaffDropdown();
   renderProjectPriceRows([]);
-  document.getElementById('project-modal-title').textContent = '建立新專案';
+  document.getElementById('p-is-completed').checked = false;
+  document.getElementById('project-modal-title').textContent = '建立新工程案件';
   document.getElementById('project-modal').classList.remove('hidden');
 }
 
@@ -2562,9 +2684,11 @@ function saveProject() {
     projects[idx].staff = staff;
     projects[idx].startDate = startDate;
     projects[idx].endDate = endDate;
+    projects[idx].isCompleted = document.getElementById('p-is-completed').checked;
     projects[idx].prices = prices;
   } else {
-    projects.push({ id, name, address, client, staff, startDate, endDate, prices, createdAt: new Date().toISOString().slice(0, 10) });
+    const isCompleted = document.getElementById('p-is-completed').checked;
+    projects.push({ id, name, address, client, staff, startDate, endDate, isCompleted, prices, createdAt: new Date().toISOString().slice(0, 10) });
   }
   
   save();
@@ -2586,9 +2710,21 @@ function editProject(id) {
   document.getElementById('p-staff').value = p.staff || '';
   document.getElementById('p-start-date').value = p.startDate || '';
   document.getElementById('p-end-date').value = p.endDate || '';
+  document.getElementById('p-is-completed').checked = !!p.isCompleted;
   renderProjectPriceRows(p.prices || []);
-  document.getElementById('project-modal-title').textContent = '編輯專案';
+  document.getElementById('project-modal-title').textContent = '編輯工程案件';
   document.getElementById('project-modal').classList.remove('hidden');
+}
+
+function toggleProjectComplete(id, isCompleted) {
+  const p = projects.find(item => item.id === id.toString());
+  if (p) {
+    p.isCompleted = isCompleted;
+    save();
+    renderProjects();
+    updateClientSelects();
+    showToast(isCompleted ? `工程案件「${p.name}」已設為完工` : `工程案件「${p.name}」已恢復進行中`);
+  }
 }
 
 function deleteProject(id) {
@@ -2609,7 +2745,8 @@ function getFilteredRecords() {
   const pid = document.getElementById('filter-project').value;
   const staff = document.getElementById('filter-staff').value;
   const worker = document.getElementById('filter-worker').value;
-  const site = document.getElementById('filter-site').value.trim().toLowerCase();
+  const siteElem = document.getElementById('filter-site');
+  const site = siteElem ? siteElem.value.trim().toLowerCase() : '';
   const statusF = document.getElementById('filter-status').value;
   const siteStatusF = document.getElementById('filter-site-status').value;
 
@@ -2713,7 +2850,7 @@ function renderRecords() {
 	      : '<span class="text-slate-300 text-[10px]">-</span>';
 
 	    const pObj = projects.find(p => p.id === r.projectId);
-    const projectTag = pObj ? `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold mr-1">${pObj.name}</span>` : '';
+    const projectName = pObj ? pObj.name : '未指定工地名稱';
     const workerTag = r.worker ? `<span class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold mr-1"><i class="fas fa-hammer mr-1"></i>${r.worker}</span>` : '';
 
     const noteHtml = r.note ? ` / <span class="text-rose-500 font-bold">${r.note}</span>` : '';
@@ -2741,8 +2878,12 @@ function renderRecords() {
       </td>
       <td class="p-4 text-xs text-slate-500">${r.date}</td>
       <td class="p-4">
-        <div class="font-bold text-slate-800">${projectTag}${workerTag}${r.site}</div>
-        <div class="text-[10px] text-slate-400 mt-0.5">${r.client} · ${r.staff || '未設工務'}</div>
+        <div class="font-black text-slate-800 text-base">${projectName}</div>
+        <div class="text-xs text-slate-400 mt-0.5">${workerTag}${r.site}</div>
+      </td>
+      <td class="p-4">
+        <div class="font-bold text-slate-700 text-xs">${r.client}</div>
+        <div class="text-[10px] text-slate-400 mt-0.5">${r.staff || '未設工務'}</div>
       </td>
       <td class="p-4">
         <div class="text-sm font-medium text-indigo-600">${r.type}${noteHtml}</div>
@@ -2794,8 +2935,7 @@ function openRecordModal() {
   document.getElementById('r-date').valueAsDate = new Date();
   
   // 初始化專案下拉選單
-  const pSelect = document.getElementById('r-project');
-  pSelect.innerHTML = '<option value="">-- 無專案 --</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  updateProjectSelects();
   
   document.getElementById('r-extra-stay').value = '';
   document.getElementById('r-extra-oil').value = '';
@@ -2841,9 +2981,9 @@ function editRec(id) {
   document.getElementById('r-note').value = r.note || '';
   
   // 初始化專案下拉選單並選中
+  updateProjectSelects();
   const pSelect = document.getElementById('r-project');
-  pSelect.innerHTML = '<option value="">-- 無專案 --</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-  pSelect.value = r.projectId || '';
+  if (pSelect) pSelect.value = r.projectId || '';
   
   document.getElementById('r-extra-stay').value = r.extraStay || '';
   document.getElementById('r-extra-oil').value = r.extraOil || '';
@@ -2857,7 +2997,7 @@ function saveRecord(keepOpen) {
   const id = document.getElementById('edit-id').value || Date.now().toString();
   const q = parseFloat(document.getElementById('r-qty').value) || 0;
   const p = parseFloat(document.getElementById('r-price').value) || 0;
-  if (!document.getElementById('r-site').value) return showToast('請輸入工地名稱', 'error');
+  if (!document.getElementById('r-project').value) return showToast('請選擇工地名稱', 'error');
   if (!document.getElementById('r-client').value) return showToast('請選擇客戶', 'error');
 
   const wp = parseFloat(document.getElementById('r-worker-price').value) || 0;
@@ -3133,12 +3273,11 @@ function updateClientSelects() {
   document.getElementById('filter-client').innerHTML = '<option value="">所有客戶</option>' + html;
   document.getElementById('r-client').innerHTML = html;
   
-  const pOptions = '<option value="">所有專案</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  const pOptions = '<option value="">所有工地</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   const fProject = document.getElementById('filter-project');
   if (fProject) fProject.innerHTML = pOptions;
   
-  const rProject = document.getElementById('r-project');
-  if (rProject) rProject.innerHTML = '<option value="">-- 無專案 --</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  updateProjectSelects();
 
 	  const wHtml = workers.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
 	  document.getElementById('filter-worker').innerHTML = '<option value="">所有師傅</option>' + wHtml;
@@ -3178,19 +3317,7 @@ function autoFillPrice() {
   const projectId = document.getElementById('r-project').value;
   if (!typeName) return;
 
-  // 優先權：專案專屬單價 > 客戶專屬單價
-  if (projectId) {
-    const project = projects.find(p => p.id === projectId);
-    if (project && project.prices) {
-      const pObj = project.prices.find(p => p.type === typeName);
-      if (pObj && pObj.price) {
-        document.getElementById('r-price').value = pObj.price;
-        calcModalTotal();
-        autoFillWorkerPrice(); // 同步嘗試填入師傅單價
-        return;
-      }
-    }
-  }
+
 
   if (clientName) {
     const client = clients.find(c => c.name === clientName);
@@ -3273,10 +3400,7 @@ function executePrint(mode) {
     // 1. 工地排序 (優先)
     if (a.site !== b.site) return a.site.localeCompare(b.site, 'zh-TW');
 
-    // 2. 專案排序
-    const pA = projects.find(p => p.id === a.projectId)?.name || "";
-    const pB = projects.find(p => p.id === b.projectId)?.name || "";
-    if (pA !== pB) return pA.localeCompare(pB, 'zh-TW');
+
     
     // 3. 日期排序
     return new Date(a.date) - new Date(b.date);
@@ -3420,7 +3544,7 @@ function executePrint(mode) {
     
     thead.innerHTML = `<tr><th width="12%">日期</th><th width="20%">項目</th><th width="12%">數量</th><th width="12%">${priceLabel}</th><th width="12%">${totalLabel}</th><th width="32%">備註</th></tr>`;
     for (const site in grouped) {
-      html += `<tr><td colspan="6" class="site-group-header">${site.includes(' - ') ? '專案工地' : '工地'}：${site}</td></tr>`;
+      html += `<tr><td colspan="6" class="site-group-header">工地：${site}</td></tr>`;
       let siteAmt = 0;
       let siteExtraStay = 0, siteExtraOil = 0, siteExtraOther = 0;
 
@@ -3498,7 +3622,7 @@ function renderInvoiceModal(data, isReprint = false) {
   } else if (uniqueSites.length === 1) {
     siteName = items[0].site;
   } else {
-    siteName = "多個工地/專案（詳見明細）";
+    siteName = "多個工地（詳見明細）";
   }
 
   // 按分組鍵分組 (優先使用專案名稱，若無則使用工地名稱)
@@ -3517,12 +3641,10 @@ function renderInvoiceModal(data, isReprint = false) {
     const groupItems = groupedData[groupKey];
     let groupSubtotal = 0;
     
-    // 插入分組標頭 (專案或工地)
-    const isProject = projects.some(p => p.name === groupKey);
     tableRows += `
       <tr class="bg-slate-50/80">
         <td colspan="6" class="p-2 font-black text-indigo-700 border-y border-slate-200">
-          <i class="fas ${isProject ? 'fa-project-diagram' : 'fa-map-marker-alt'} mr-2"></i>${isProject ? '專案' : '工地'}：${groupKey}
+          <i class="fas fa-map-marker-alt mr-2"></i>工地：${groupKey}
         </td>
       </tr>
     `;
@@ -3534,9 +3656,7 @@ function renderInvoiceModal(data, isReprint = false) {
       const unit = typeObj ? (typeObj.unit || 'M') : 'M';
       const noteText = r.note ? ` <span class="text-[12px] block mt-1">${r.note}</span>` : '';
       
-      // 如果是專案分組，在項目中顯示具體施作位置(工地)
-      const pObj = projects.find(p => p.id === r.projectId);
-      const siteDetail = pObj ? `<span class="text-[11px] text-slate-500 block mb-0.5"><i class="fas fa-location-dot mr-1 text-[9px]"></i>${r.site}</span>` : '';
+      const siteDetail = '';
       
       tableRows += `
         <tr class="hover:bg-slate-50">
@@ -3600,7 +3720,7 @@ function renderInvoiceModal(data, isReprint = false) {
       }
     });
 
-    // 自動連動到帳本 (應收帳款)
+    // 自動連動到帳本 (應收帳款)；若有唯一關聯工地，自動標記工地以利盈虧統計
     const cashId = `INV-REC-${invNo}`;
     const cashRecord = {
       id: cashId,
@@ -3612,7 +3732,8 @@ function renderInvoiceModal(data, isReprint = false) {
       title: `請款單：${invNo} (${clientInfo.name})`,
       amount: grandTotal,
       note: `由請款單自動產生 - ${siteName}`,
-      sourceRecordIds: itemIds
+      sourceRecordIds: itemIds,
+      projectId: uniqueProjects.length === 1 ? uniqueProjects[0] : ''
     };
     
     const existingIdx = cashRecords.findIndex(r => r.id === cashId);
@@ -4406,10 +4527,15 @@ function deleteCashSubCat(cIdx, sIdx) {
 function renderCashRecords() {
   const filterMonth = document.getElementById('cash-filter-month').value;
   const filterAcc = document.getElementById('cash-filter-account').value;
+  const filterPid = document.getElementById('cash-filter-project')?.value || '';
   let filtered = [...cashRecords];
   
   if (filterMonth) filtered = filtered.filter(r => r.date.startsWith(filterMonth));
   if (filterAcc) filtered = filtered.filter(r => r.account === filterAcc || (r.type === 'transfer' && r.toAccount === filterAcc));
+  if (filterPid) filtered = filtered.filter(r => r.projectId === filterPid);
+
+  // 同步工地篩選下拉（含已完工工地，讓使用者可以篩選完工工地的紀錄）
+  updateCashFilterProjectSelect(filterPid);
   
   filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -4458,6 +4584,9 @@ function renderCashRecords() {
 
     if (isReceivable) return '';
 
+    const pName = r.projectId ? (projects.find(p => p.id === r.projectId)?.name || '') : '';
+    const projectTag = pName ? `<div class="text-[10px] text-emerald-600 font-bold mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i>${pName}</div>` : '';
+
     return `<tr>
       <td class="p-4 text-xs text-slate-500">${r.date}</td>
       <td class="p-4">
@@ -4470,6 +4599,7 @@ function renderCashRecords() {
       <td class="p-4">
         <div class="font-bold text-slate-800">${r.title}</div>
         <div class="text-[10px] text-slate-400 mt-0.5">${r.note || ''}</div>
+        ${projectTag}
       </td>
       <td class="p-4 text-right font-black ${displayAmountClass}">
         ${displayAmountPrefix}$${r.amount.toLocaleString()}${statusTag}
@@ -4495,8 +4625,29 @@ function renderCashRecords() {
   if (recCard) recCard.textContent = `$${totalReceivable.toLocaleString()}`;
   document.getElementById('cash-balance').textContent = `$${(totalIncome - totalExpense).toLocaleString()}`;
 
+  // 篩選工地時的盈餘提示
+  if (filterPid) {
+    const balance = totalIncome - totalExpense;
+    document.getElementById('cash-balance').parentElement.querySelector('.text-xs').textContent = balance >= 0 ? '結餘（篩選工地）' : '虧損（篩選工地）';
+    document.getElementById('cash-balance').className = `text-2xl font-black ${balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+  } else {
+    const balEl = document.getElementById('cash-balance');
+    if (balEl) {
+      balEl.parentElement.querySelector('.text-xs').textContent = '結餘';
+      balEl.className = 'text-2xl font-black text-indigo-600';
+    }
+  }
+
   // 更新各帳戶餘額卡片與全部帳戶總額彙總
   renderAccountBalanceCards();
+}
+
+// 更新帳務中心的工地篩選下拉（含已完工工地）
+function updateCashFilterProjectSelect(current) {
+  const sel = document.getElementById('cash-filter-project');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">全部工地</option>' +
+    projects.map(p => `<option value="${p.id}" ${p.id === current ? 'selected' : ''}>${p.name}${p.isCompleted ? '（已完工）' : ''}</option>`).join('');
 }
 
 // ============================================================
@@ -4609,14 +4760,18 @@ function toggleTransferFields() {
   const type = document.getElementById('cash-type').value;
   const toAccWrap = document.getElementById('cash-to-account-wrap');
   const mainCatWrap = document.getElementById('cash-main-cat').closest('.grid');
+  const cashProjWrap = document.getElementById('cash-project')?.closest('div');
   
   if (type === 'transfer') {
     toAccWrap.classList.remove('hidden');
     mainCatWrap.classList.add('hidden'); // 轉帳通常不需要科目分類
-    document.getElementById('cash-to-account').innerHTML = cashAccounts.filter(a => a !== '應收帳款').map(a => `<option value="${a}">${a}</option>`).join('');
+    if (cashProjWrap) cashProjWrap.classList.add('hidden'); // 轉帳不關聯工地
+    const accNames = getAccountNames().filter(a => a !== '應收帳款');
+    document.getElementById('cash-to-account').innerHTML = accNames.map(a => `<option value="${a}">${a}</option>`).join('');
   } else {
     toAccWrap.classList.add('hidden');
     mainCatWrap.classList.remove('hidden');
+    if (cashProjWrap) cashProjWrap.classList.remove('hidden');
   }
 }
 
@@ -4645,8 +4800,18 @@ function openCashModal() {
   document.getElementById('cash-account').innerHTML = accNames.map(a => `<option value="${a}">${a}</option>`).join('');
   document.getElementById('cash-main-cat').innerHTML = cashCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
   updateSubCatSelect();
+  updateCashProjectSelect();
   
   document.getElementById('cash-modal').classList.remove('hidden');
+}
+
+// 更新收支 Modal 的關聯工地下拉選單（含所有工地，已完工工地也能選）
+function updateCashProjectSelect(projectId) {
+  const sel = document.getElementById('cash-project');
+  if (!sel) return;
+  const current = projectId !== undefined ? projectId : '';
+  sel.innerHTML = '<option value="">（不選擇工地）</option>' +
+    projects.map(p => `<option value="${p.id}" ${p.id === current ? 'selected' : ''}>${p.name}${p.isCompleted ? '（已完工）' : ''}</option>`).join('');
 }
 
 function editCashRecord(id) {
@@ -4671,6 +4836,7 @@ function editCashRecord(id) {
   if (r.mainCat) document.getElementById('cash-main-cat').value = r.mainCat;
   updateSubCatSelect();
   if (r.subCat) document.getElementById('cash-sub-cat').value = r.subCat;
+  updateCashProjectSelect(r.projectId);
   
   document.getElementById('cash-modal').classList.remove('hidden');
 }
@@ -4685,12 +4851,13 @@ function saveCashRecord() {
   const title = document.getElementById('cash-title').value.trim();
   const amount = parseFloat(document.getElementById('cash-amount').value) || 0;
   const note = document.getElementById('cash-note').value.trim();
+  const projectId = document.getElementById('cash-project')?.value || '';
 
   const toAccount = document.getElementById('cash-to-account').value;
   if (!date || !title || amount <= 0) return showToast('請填寫完整日期、摘要與有效金額', 'error');
   if (type === 'transfer' && account === toAccount) return showToast('來源帳戶與目標帳戶不能相同', 'error');
 
-  const record = { id, date, type, account, toAccount, mainCat, subCat, title, amount, note };
+  const record = { id, date, type, account, toAccount, mainCat, subCat, title, amount, note, projectId };
   const idx = cashRecords.findIndex(r => r.id === id);
   if (idx > -1) cashRecords[idx] = record;
   else cashRecords.push(record);
@@ -4703,6 +4870,99 @@ function deleteCashRecord(id) {
   if (!confirm('確定要刪除這筆收支紀錄？')) return;
   cashRecords = cashRecords.filter(r => r.id !== id);
   save(); renderCashRecords(); updateArBadge(); showToast('紀錄已刪除', 'info');
+}
+
+// ============================================================
+// 工地盈虧統計
+// 收入計算：已關聯工地的收入型收支＋已收款的應收帳款（請款收入計入工地）
+// 開銷計算：已關聯工地的支出型收支（不含轉帳）
+// ============================================================
+function calcProjectProfit(pid) {
+  let income = 0, expense = 0;
+  cashRecords.forEach(r => {
+    if (r.projectId !== pid) return;
+    if (r.type === 'income') income += r.amount;
+    else if (r.type === 'receivable' && r.status === 'collected') income += r.amount; // 已收款的請款也計入工地收入
+    else if (r.type === 'expense') expense += r.amount;
+  });
+  return { income, expense, profit: income - expense };
+}
+
+function renderProjectProfit() {
+  const statusFilter = document.getElementById('pp-filter-status')?.value || '';
+  const list = document.getElementById('pp-list');
+  const empty = document.getElementById('pp-empty');
+  if (!list) return;
+
+  let filteredProjects = [...projects];
+  if (statusFilter === 'completed') filteredProjects = projects.filter(p => p.isCompleted);
+  else if (statusFilter === 'progress') filteredProjects = projects.filter(p => !p.isCompleted);
+
+  // 計算每個工地的盈虧
+  const rows = filteredProjects.map(p => {
+    const { income, expense, profit } = calcProjectProfit(p.id);
+    const profitClass = profit > 0 ? 'text-emerald-600' : (profit < 0 ? 'text-rose-600' : 'text-slate-500');
+    const statusBadge = p.isCompleted
+      ? '<span class="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">已完工</span>'
+      : '<span class="px-2 py-1 rounded-full text-[10px] font-bold bg-slate-50 text-slate-400 border border-slate-100">施工中</span>';
+    return { p, income, expense, profit, profitClass, statusBadge };
+  });
+
+  rows.sort((a, b) => a.p.createdAt && b.p.createdAt ? b.p.createdAt.localeCompare(a.p.createdAt) : 0);
+
+  list.innerHTML = rows.map(({ p, income, expense, profit, profitClass, statusBadge }) => `
+    <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition">
+      <td class="p-4 font-bold text-slate-700">${p.name}</td>
+      <td class="p-4 text-center">${statusBadge}</td>
+      <td class="p-4 text-right font-bold text-emerald-600">$${income.toLocaleString()}</td>
+      <td class="p-4 text-right font-bold text-rose-600">$${expense.toLocaleString()}</td>
+      <td class="p-4 text-right font-black ${profitClass}">$${profit.toLocaleString()}</td>
+      <td class="p-4 text-center">
+        <button onclick="showProjectProfitDetail('${p.id}')" class="px-3 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition flex items-center justify-center shadow-sm text-[11px] font-bold">
+          <i class="fas fa-eye mr-1"></i>明細
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  empty.classList.toggle('hidden', rows.length > 0);
+}
+
+function showProjectProfitDetail(pid) {
+  const p = projects.find(x => x.id === pid);
+  if (!p) return;
+
+  const related = cashRecords.filter(r => r.projectId === pid).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  document.getElementById('pp-detail-title').innerHTML = `<i class="fas fa-map-marker-alt mr-2 text-indigo-400"></i>工地收支明細：${p.name}`;
+
+  const html = related.map(r => {
+    const isIncome = r.type === 'income';
+    const isReceivable = r.type === 'receivable';
+    const isTransfer = r.type === 'transfer';
+    const isCollected = isReceivable && r.status === 'collected';
+    let amountClass = isTransfer ? 'text-blue-600' : ((isIncome || isCollected) ? 'text-emerald-600' : (isReceivable ? 'text-amber-600' : 'text-rose-600'));
+    let prefix = isTransfer ? '⇄' : ((isIncome || isReceivable) ? '+' : '-');
+    return `<tr>
+      <td class="p-4 text-xs text-slate-500">${r.date}</td>
+      <td class="p-4">
+        <div class="text-[10px] font-bold ${isIncome ? 'text-emerald-600' : (isReceivable ? (isCollected ? 'text-emerald-600' : 'text-amber-600') : 'text-rose-600')} mb-0.5">${r.type === 'income' ? '收入' : (isReceivable ? (isCollected ? '應收款（已收款）' : '應收款（待收）') : (isTransfer ? '轉帳' : '支出'))}</div>
+        <div class="flex gap-1 flex-wrap">
+          <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[9px] font-bold">${r.mainCat || '未分類'}</span>
+          <span class="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 text-[9px] font-bold">${r.subCat || '無'}</span>
+        </div>
+      </td>
+      <td class="p-4">
+        <div class="font-bold text-slate-800">${r.title}</div>
+        <div class="text-[10px] text-slate-400 mt-0.5">${r.note || ''}</div>
+      </td>
+      <td class="p-4 text-right font-black ${amountClass}">${prefix}$${r.amount.toLocaleString()}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" class="p-8 text-center text-slate-400">此工地尚無關聯收支紀錄</td></tr>';
+
+  document.getElementById('pp-detail-list').innerHTML = html;
+  document.getElementById('pp-detail-card').classList.remove('hidden');
+  document.getElementById('pp-detail-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ============================================================
@@ -4783,9 +5043,8 @@ function openArCollectModal(id) {
   document.getElementById('ar-collect-note').value = '';
 
   // 入帳帳戶：排除應收帳款本身
-  const collectAccounts = cashAccounts.filter(a => a !== '應收帳款');
-  document.getElementById('ar-collect-account').innerHTML = collectAccounts.map(a => `<option value="${a}">${a}</option>`).join('')
-    + (collectAccounts.includes('應收帳款') ? '' : '');
+  const collectAccounts = getAccountNames().filter(a => a !== '應收帳款');
+  document.getElementById('ar-collect-account').innerHTML = collectAccounts.map(a => `<option value="${a}">${a}</option>`).join('');
 
   document.getElementById('ar-collect-modal').classList.remove('hidden');
 }
@@ -4825,7 +5084,7 @@ function saveArCollect() {
     });
   }
 
-  // 2. 自動將金額寫入所選帳戶的帳本收入
+  // 2. 自動將金額寫入所選帳戶的帳本收入（繼承應收帳款的工地關聯，計入工地盈虧）
   const incomeRecord = {
     id: `AR-COLLECT-${id}-${Date.now()}`,
     date: date,
@@ -4836,7 +5095,8 @@ function saveArCollect() {
     subCat: '請款收款',
     title: `收款：${r.title || r.id}`,
     amount: amount,
-    note: `由應收帳款收款自動入帳 (${account})${note ? ' · ' + note : ''}`
+    note: `由應收帳款收款自動入帳 (${account})${note ? ' · ' + note : ''}`,
+    projectId: r.projectId || ''
   };
   cashRecords.push(incomeRecord);
 
@@ -5008,6 +5268,58 @@ function initYearSelect() {
   }
 }
 
+function openQuickProjectModal() {
+  document.getElementById('qp-name').value = '';
+  const clientSel = document.getElementById('qp-client');
+  const currentClient = document.getElementById('r-client').value || '';
+  clientSel.innerHTML = '<option value="">-- 無關聯客戶 --</option>' + clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  clientSel.value = currentClient;
+  document.getElementById('quick-project-modal').classList.remove('hidden');
+}
+
+function updateProjectSelects() {
+  const rProject = document.getElementById('r-project');
+  if (rProject) {
+    const activeProjects = projects.filter(p => !p.isCompleted);
+    rProject.innerHTML = '<option value="">（選擇工地）</option>' + 
+      activeProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('') +
+      '<option value="__NEW_PROJECT__" style="color: #4f46e5; font-weight: bold;">＋ 新增工程案件</option>';
+    
+    rProject.onchange = () => {
+      if (rProject.value === '__NEW_PROJECT__') {
+        rProject.value = '';
+        openQuickProjectModal();
+      } else {
+        onProjectChange();
+      }
+    };
+  }
+}
+
+function saveQuickProject() {
+  const name = document.getElementById('qp-name').value.trim();
+  const client = document.getElementById('qp-client').value;
+  if (!name) return showToast('請輸入工地名稱', 'error');
+  if (projects.some(p => p.name === name)) {
+    return showToast('此工地名稱已存在', 'error');
+  }
+  const newProj = {
+    id: 'PRJ-' + Date.now(),
+    name,
+    client,
+    prices: [],
+    createdAt: new Date().toISOString()
+  };
+  projects.push(newProj);
+  save();
+  updateClientSelects();
+  renderProjects();
+  // 自動選中剛新增的工地
+  document.getElementById('r-project').value = newProj.id;
+  closeModal('quick-project-modal');
+  showToast('新工程案件已建立並自動選中');
+}
+
 window.onload = async function () {
   if (sessionStorage.getItem('is_authenticated') !== 'true') {
     document.getElementById('loading-overlay').classList.add('hidden');
@@ -5094,6 +5406,22 @@ function daysBetween(a,b) { return Math.round((new Date(b+'T00:00:00')-new Date(
 function paymentKey(expenseId, monthKey) { return `${expenseId}_${monthKey}`; }
 function getRecurringPayment(expenseId, monthKey) { return recurringPayments.find(p => p.key === paymentKey(expenseId, monthKey)); }
 function getRecurringStatus(expense, monthKey) {
+  const freq = expense.frequency || 'monthly';
+  const [y, m] = monthKey.split('-').map(Number);
+  
+  // 判斷當前月份是否符合付款頻率
+  // monthly: 每個月
+  // quarterly: 每季第一個月 (1, 4, 7, 10月) 或起始月的每3個月
+  // yearly: 每年固定某個月 (預設1月，或可依建立月份決定)
+  if (freq === 'quarterly') {
+    // 假設以建立月份或 1 月為基底，若 (m - 1) % 3 !== 0 則本月不是付款月份
+    const startM = expense.createdAt ? new Date(expense.createdAt).getMonth() + 1 : 1;
+    if ((m - startM) % 3 !== 0) return {status:'inactive', due: ''};
+  } else if (freq === 'yearly') {
+    const startM = expense.createdAt ? new Date(expense.createdAt).getMonth() + 1 : 1;
+    if (m !== startM) return {status:'inactive', due: ''};
+  }
+
   const due = dueDateForMonth(monthKey, expense.dueDay); 
   const payment = getRecurringPayment(expense.id, monthKey); 
   const today = localDateString();
@@ -5114,13 +5442,15 @@ function openRecurringExpenseModal(id='') {
   document.getElementById('re-name').value = e?.name || '';
   document.getElementById('re-amount').value = e?.amount ?? '';
   document.getElementById('re-due-day').value = e?.dueDay ?? 5;
+  document.getElementById('re-frequency').value = e?.frequency || 'monthly';
   document.getElementById('re-start-date').value = e?.startDate || '';
   document.getElementById('re-end-date').value = e?.endDate || '';
   document.getElementById('re-remind-days').value = e?.remindDays ?? 3;
   document.getElementById('re-note').value = e?.note || '';
   document.getElementById('re-enabled').checked = e?.enabled !== false;
-  document.getElementById('re-account').innerHTML = cashAccounts.map(a=>`<option value="${a}">${a}</option>`).join('');
-  document.getElementById('re-account').value = e?.account || cashAccounts[0] || '';
+  const accNames = getAccountNames();
+  document.getElementById('re-account').innerHTML = accNames.map(a=>`<option value="${a}">${a}</option>`).join('');
+  document.getElementById('re-account').value = e?.account || accNames[0] || '';
   document.getElementById('re-main-cat').innerHTML = cashCategories.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
   document.getElementById('re-main-cat').value = e?.mainCat || cashCategories[0]?.name || '';
   updateRecurringSubCatSelect();
@@ -5137,10 +5467,11 @@ function saveRecurringExpense() {
   const id = document.getElementById('re-id').value || `RE-${Date.now()}`;
   const name = document.getElementById('re-name').value.trim();
   const amount = Number(document.getElementById('re-amount').value);
+  const frequency = document.getElementById('re-frequency').value;
   const dueDay = Number(document.getElementById('re-due-day').value);
   if (!name || amount <= 0 || dueDay < 1 || dueDay > 31) return showToast('請填寫支出名稱、有效金額與付款日', 'error');
   const item = { 
-    id, name, amount, dueDay, 
+    id, name, amount, frequency, dueDay, 
     startDate: document.getElementById('re-start-date').value,
     endDate: document.getElementById('re-end-date').value,
     remindDays: Number(document.getElementById('re-remind-days').value)||0, 
@@ -5245,7 +5576,11 @@ function checkRecurringPaymentReminder() {
     <input type="hidden" id="re-id">
     <div class="space-y-4">
       <div><label class="text-xs font-bold text-slate-500">支出名稱 *</label><input id="re-name" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="例如：辦公室房租"></div>
-      <div class="grid grid-cols-2 gap-4"><div><label class="text-xs font-bold text-slate-500">每月預算 *</label><input id="re-amount" type="number" min="0" step="1" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="35000"></div><div><label class="text-xs font-bold text-slate-500">每月付款日 *</label><input id="re-due-day" type="number" min="1" max="31" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="5"></div></div>
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="text-xs font-bold text-slate-500">支出金額 *</label><input id="re-amount" type="number" min="0" step="1" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="35000"></div>
+        <div><label class="text-xs font-bold text-slate-500">付款頻率 *</label><select id="re-frequency" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"><option value="monthly">月付 (每月)</option><option value="quarterly">季付 (每三個月)</option><option value="yearly">年付 (每年)</option></select></div>
+        <div><label class="text-xs font-bold text-slate-500">付款日 (幾號) *</label><input id="re-due-day" type="number" min="1" max="31" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" placeholder="5"></div>
+      </div>
       <div class="grid grid-cols-2 gap-4"><div><label class="text-xs font-bold text-slate-500">開始日期 (選填)</label><input id="re-start-date" type="date" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></div><div><label class="text-xs font-bold text-slate-500">截止日期 (選填)</label><input id="re-end-date" type="date" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></div></div>
       <div class="grid grid-cols-2 gap-4"><div><label class="text-xs font-bold text-slate-500">提醒提前天數</label><input id="re-remind-days" type="number" min="0" max="30" value="3" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></div><div><label class="text-xs font-bold text-slate-500">付款帳戶</label><select id="re-account" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></select></div></div>
       <div class="grid grid-cols-2 gap-4"><div><label class="text-xs font-bold text-slate-500">大類科目</label><select id="re-main-cat" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1" onchange="updateRecurringSubCatSelect()"></select></div><div><label class="text-xs font-bold text-slate-500">子類科目</label><select id="re-sub-cat" class="w-full border border-slate-200 p-2.5 rounded-xl text-sm mt-1"></select></div></div>
