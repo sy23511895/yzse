@@ -15,6 +15,17 @@
     .view-active { display: block; }
     #print-area { display: none; }
 
+    /* 隱藏數字輸入框的上下調整箭頭（spinner），僅能手動輸入 */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
     /* 自訂捲軸 */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
